@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Six Crowns - Medieval Strategy RPG</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Main Game Interface -->
+        <div id="main-interface" class="hidden">
+            <!-- Header -->
+            <header class="game-header">
+                <div class="header-left">
+                    <h1>⚔ THE SIX CROWNS ⚔</h1>
+                    <div class="game-status">
+                        <span id="current-year">Year 1</span>
+                        <span id="current-season">Spring</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button id="btn-generate-asset" class="btn btn-info">✨ GENERATE ASSET</button>
+                    <button id="btn-save-game" class="btn btn-primary">💾 Save</button>
+                    <button id="btn-load-game" class="btn btn-secondary">📂 Load</button>
+                    <button id="btn-reset-game" class="btn btn-danger">🔄 Reset</button>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <div class="game-content">
+                <!-- Left Sidebar: Kingdom Info -->
+                <aside class="left-sidebar">
+                    <div class="sidebar-section">
+                        <h2>YOUR KINGDOM</h2>
+                        <div id="player-info" class="kingdom-info"></div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h2>RESOURCES</h2>
+                        <div id="resources-info" class="resources-info"></div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h2>MILITARY</h2>
+                        <div id="military-info" class="military-info"></div>
+                    </div>
+                </aside>
+
+                <!-- Center: Map and Tabs -->
+                <main class="center-content">
+                    <!-- Tab Navigation -->
+                    <div class="tab-navigation">
+                        <button class="tab-btn active" data-tab="map">🗺 MAP</button>
+                        <button class="tab-btn" data-tab="court">👑 COURT</button>
+                        <button class="tab-btn" data-tab="military">⚔ MILITARY</button>
+                        <button class="tab-btn" data-tab="diplomacy">🤝 DIPLOMACY</button>
+                        <button class="tab-btn" data-tab="economy">💰 ECONOMY</button>
+                        <button class="tab-btn" data-tab="intelligence">🕵 INTELLIGENCE</button>
+                        <button class="tab-btn" data-tab="chronicle">📜 CHRONICLE</button>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <!-- MAP TAB -->
+                        <div class="tab-panel active" id="map-tab">
+                            <canvas id="game-map" width="1000" height="600"></canvas>
+                            <div id="map-legend" class="map-legend"></div>
+                        </div>
+
+                        <!-- COURT TAB -->
+                        <div class="tab-panel" id="court-tab">
+                            <div id="court-content"></div>
+                        </div>
+
+                        <!-- MILITARY TAB -->
+                        <div class="tab-panel" id="military-tab">
+                            <div id="military-content"></div>
+                        </div>
+
+                        <!-- DIPLOMACY TAB -->
+                        <div class="tab-panel" id="diplomacy-tab">
+                            <div id="diplomacy-content"></div>
+                        </div>
+
+                        <!-- ECONOMY TAB -->
+                        <div class="tab-panel" id="economy-tab">
+                            <div id="economy-content"></div>
+                        </div>
+
+                        <!-- INTELLIGENCE TAB -->
+                        <div class="tab-panel" id="intelligence-tab">
+                            <div id="intelligence-content"></div>
+                        </div>
+
+                        <!-- CHRONICLE TAB -->
+                        <div class="tab-panel" id="chronicle-tab">
+                            <div id="chronicle-content" class="chronicle-scroll"></div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- Right Sidebar: World Info -->
+                <aside class="right-sidebar">
+                    <div class="sidebar-section">
+                        <h2>OTHER RULERS</h2>
+                        <div id="rulers-info" class="rulers-info"></div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h2>RELATIONS</h2>
+                        <div id="relations-info" class="relations-info"></div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h2>ALERTS</h2>
+                        <div id="alerts-info" class="alerts-info"></div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Bottom: Actions -->
+            <div class="action-bar">
+                <div class="action-section">
+                    <h3>ISSUE ORDERS</h3>
+                    <div id="action-buttons" class="action-grid"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Right: Turn Control -->
+            <div class="turn-control">
+                <button id="btn-next-turn" class="btn btn-large btn-success">➤ NEXT TURN</button>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="start-screen">
+            <div class="start-content">
+                <h1>⚔ THE SIX CROWNS ⚔</h1>
+                <p class="subtitle">A Medieval Political Strategy Simulation</p>
+                
+                <div class="start-buttons">
+                    <button id="btn-new-game" class="btn btn-large btn-success">NEW GAME</button>
+                    <button id="btn-continue-game" class="btn btn-large btn-primary">CONTINUE</button>
+                </div>
+
+                <div class="start-info">
+                    <h2>About the Game</h2>
+                    <p>Rule one of six kingdoms in the Chesapeake region. Navigate political intrigue, manage armies, trade, spy, and build alliances. The other five rulers make their own decisions—the world continues with or without you.</p>
+                    <p><strong>Choose your orders wisely.</strong> Each action has consequences.</p>
+                    <p><strong>Generate Assets:</strong> Press the ✨ button during gameplay to create AI image prompts for portraits, maps, items, and rewards.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Generation Modal -->
+        <div id="asset-modal" class="modal hidden">
+            <div class="modal-content">
+                <button id="close-modal" class="close-btn">&times;</button>
+                <h2>GENERATE ASSET PROMPT</h2>
+                
+                <div class="asset-type-selector">
+                    <label>What do you want to generate?</label>
+                    <select id="asset-type">
+                        <option value="ruler-portrait">Ruler Portrait</option>
+                        <option value="map">Kingdom Map</option>
+                        <option value="item">Item/Artifact</option>
+                        <option value="reward">Reward/Trophy</option>
+                        <option value="event">Event Illustration</option>
+                        <option value="city">City/Castle</option>
+                        <option value="army">Army/Military Unit</option>
+                    </select>
+                </div>
+
+                <div id="asset-context" class="asset-context"></div>
+
+                <div class="prompt-display">
+                    <label>Copy this prompt to your AI image generator:</label>
+                    <textarea id="prompt-text" readonly></textarea>
+                    <button id="copy-prompt" class="btn btn-primary">📋 COPY PROMPT</button>
+                </div>
+
+                <div class="asset-upload">
+                    <label>Upload generated image:</label>
+                    <input type="file" id="asset-file" accept="image/*">
+                    <button id="upload-asset" class="btn btn-success">✅ USE IMAGE</button>
+                </div>
+
+                <div id="preview-area" class="preview-area"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
