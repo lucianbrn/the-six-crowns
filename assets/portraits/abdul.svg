@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
+  <rect width="300" height="400" fill="#4d111d"/>
+  <circle cx="150" cy="110" r="54" fill="#dbc6a2"/>
+  <path d="M95 168 Q150 132 205 168 L215 332 Q150 355 85 332 Z" fill="#a9333d"/>
+  <rect x="104" y="200" width="92" height="80" rx="8" fill="#d66b7d" opacity="0.7"/>
+  <text x="150" y="370" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#fde8ea">Abdul</text>
+</svg>
