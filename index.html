@@ -98,7 +98,7 @@ button{font-family:inherit; cursor:pointer}
 .tech b{color:#fff; display:block; font-size:13.5px}
 .tech small{color:#9b8f6e}
 /* ---------- START SCREEN ---------- */
-#start{position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+#start{position:fixed; inset:0; z-index:50; display:flex; align-items:flex-start; justify-content:center; overflow-y:auto; padding:26px 0;
   background:radial-gradient(ellipse at 50% 120%, rgba(38,58,84,.9), rgba(4,6,10,.97) 65%)}
 #start .box{text-align:center; width:min(1060px,96vw); padding:20px}
 #start h1{font-size:52px; letter-spacing:10px; color:var(--gold2); text-shadow:0 3px 0 #4a3805, 0 10px 34px #000}
@@ -126,6 +126,7 @@ button{font-family:inherit; cursor:pointer}
 <div id="topbar">
   <div class="title">THE SIX PRINCES<small>THE CHESAPEAKE &middot; c. 1612</small></div>
   <div class="yields" id="yields"></div>
+  <button class="tbtn" id="btn-ability">HOUSE ABILITY</button>
   <button class="tbtn" id="btn-tech">TECHNOLOGY</button>
   <button class="tbtn" id="btn-chron">CHRONICLE</button>
   <button class="tbtn" id="btn-save">SAVE</button>
@@ -157,13 +158,20 @@ button{font-family:inherit; cursor:pointer}
   <div id="dipbody"></div>
 </div></div>
 
+<div class="modal" id="eventmodal"><div class="mbox" style="width:min(600px,94vw)">
+  <h2 id="evtitle">A DECISION WAITS</h2><div class="msub" id="evsub"></div>
+  <p id="evtext" style="line-height:1.6; color:#e6dcc0; margin-bottom:14px"></p>
+  <div id="evopts"></div>
+</div></div>
+
 <div id="start"><div class="box">
   <h1>THE SIX PRINCES</h1>
-  <div class="tag">A Civilization of the Chesapeake</div>
-  <p class="lore">Six princes. One bay. The year is 1612 and the waters of the Chesapeake run between six young crowns — each with a capital, a banner, and a claim. Found cities on her shores, raise hosts, master the arts of war and learning, and write your house into the chronicle. Take every rival capital, and the bay is yours.</p>
+  <div class="tag">Six Crowns · One Age</div>
+  <p class="lore">Between the Blue Ridge and the Bay, the old kingdom has broken apart. Six princes remain — each with a capital, a banner, a vow, and a claim. Twenty years. Four seasons a year. Found cities, raise hosts, decide the season's crises, and write your house into the chronicle before the Age ends.</p>
   <div style="letter-spacing:3px; color:var(--gold2); font-size:12px">CHOOSE YOUR PRINCE</div>
   <div class="pick" id="pick"></div>
-  <div class="foot">Full turn-based grand strategy &middot; 704-tile living map &middot; 5 AI princes who expand, scheme and make war &middot; Domination or highest score at Turn 150</div>
+  <div class="foot">The Age lasts 80 seasons &middot; Fulfill your house's VOW, take every rival capital, or lead the chronicle when the Age ends</div>
+  <div id="housedetail"></div>
 </div></div>
 
 <script>
@@ -183,26 +191,26 @@ addEventListener('resize',resize); resize();
 
 /* seeded rng so terrain texture is stable per tile */
 function srand(seed){let t=seed>>>0; return ()=>{t+=0x6D2B79F5; let r=Math.imul(t^t>>>15,1|t); r^=r+Math.imul(r^r>>>7,61|r); return ((r^r>>>14)>>>0)/4294967296;}}
-const R=srand(1612);
+let R=srand(1612);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist2=(a,b)=>Math.abs(a.q-b.q)+Math.abs(a.r-b.r);
 
 /* ---------------- PRINCES ---------------- */
 const PRINCES=[
- {name:'Aldric', house:'House Maren', title:'Prince of the Western Shore', color:'#3f6fb5', dark:'#24466f', trait:'Seafarer — harbors and galleys thrive under the Maren banner.', bonus:'+1 Gold from water tiles'},
- {name:'Baldwin', house:'House Ferro', title:'Prince of the Iron Hills', color:'#b5443c', dark:'#6f2824', trait:'Ironborn — soldiers of Ferro are forged, not raised.', bonus:'+15% unit strength'},
- {name:'Cassian', house:'House Aurelian', title:'Prince of the Golden Fields', color:'#c9a227', dark:'#7d6410', trait:'Golden Fields — Aurelian granaries never empty.', bonus:'+1 Food from farms & plains'},
- {name:'Dmitri', house:'House Volkov', title:'Prince of the Northern Pines', color:'#4d7c4d', dark:'#2c4d2c', trait:'Pine Lord — Volkov thrives where the forest is thickest.', bonus:'+1 Production from forests'},
- {name:'Edmund', house:'House Corvin', title:'Prince of the Salt Marsh', color:'#7a4d8f', dark:'#4a2c59', trait:'Marsh Prince — Corvin knows every hidden channel of the bay.', bonus:'Units ignore marsh movement cost'},
- {name:'Falk', house:'House Sturm', title:'Prince of the Storm Coast', color:'#4d8f8a', dark:'#2c5754', trait:'Storm Coast — Sturm ships and riders strike like weather.', bonus:'+1 movement for all units'},
+ {name:'Lucian', place:'Vienna', house:'House of Vienna', title:'The Wayward Prince', color:'#dedbd2', dark:'#5a5648', trait:'Even start at the crossroads of the age. Vienna earns from every road that passes through it.', bonus:'+1 Gold from inland trade tiles', ability:'ADAPT', abilityDesc:'Once a season: regain momentum — all your units +2 movement this season and +15 Gold.', vow:'THE CROSSROADS', vowDesc:'End the Age holding 5+ cities and the greatest treasury of any house.', startGold:150, dev:{infra:38,dev:36,pop:38,wealth:40,def:34}},
+ {name:'Abdul', place:'Mount Vernon Square', house:'House of Mount Vernon', title:'The Night Prince', color:'#b5443c', dark:'#6f2824', trait:'Gentle start. The richest city on the river, and boats at George Towne that move like rumors.', bonus:'+1 Gold from water tiles', ability:'OBSERVE', abilityDesc:'Once a season: learn true things — reveal a rival\'s exact strength and gain +20 Knowledge.', vow:'THE NIGHT WATCH', abilityName:'OBSERVE', vowDesc:'End the Age at peace with every living house, every relation 40 or better.', startGold:185, dev:{infra:40,dev:38,pop:36,wealth:46,def:30}},
+ {name:'Josiah', place:'Gwynn Oak', house:'House of Gwynn Oak', title:'The Merchant Prince', color:'#8a8f98', dark:'#4c5058', trait:'Gentle start. A harbor at Baltemore and the biggest treasury in the age.', bonus:'Markets and Harbors earn +2 Gold', ability:'BROKER DEAL', abilityDesc:'Once a season: arrange a deal — +45 Gold, and two rivals warm to you (+8).', vow:'THE FULL COFFER', vowDesc:'End the Age with the greatest treasury of any house.', startGold:220, dev:{infra:42,dev:40,pop:34,wealth:52,def:28}},
+ {name:'Kameron', place:'Louisa', house:'House of Louisa', title:'The Quiet Prince', color:'#4d7c4d', dark:'#2c4d2c', trait:'Gentle start. The widest, safest lands in the age — food and timber without end.', bonus:'+1 Food from farms & plains', ability:'HOLD COMPOSURE', abilityDesc:'Once a season: calm and plenty — every city +12 food stores and +15 Influence.', vow:'NO ONE HUNGRY', vowDesc:'End the Age with 40+ total population and every city at population 3 or more.', startGold:120, dev:{infra:34,dev:34,pop:40,wealth:32,def:54}},
+ {name:'Emanuel', place:'Tysens', house:'House of Tysens', title:'The Scholar Prince', color:'#3f6fb5', dark:'#24466f', trait:'Hard start. The smallest territory — but an academy, and ledgers that never lie.', bonus:'Libraries earn +2 Knowledge', ability:'ANALYZE', abilityDesc:'Once a season: see the ledger whole — +35 Knowledge and a rival\'s research revealed.', vow:'THE COMPLETE LEDGER', vowDesc:'Master 12 or more technologies before the Age ends.', startGold:110, dev:{infra:36,dev:46,pop:28,wealth:30,def:26}},
+ {name:'Daouda', place:"Clarke's Burgh", house:"House of Clarke's Burgh", title:'The Champion Prince', color:'#8a6238', dark:'#54391d', trait:'Even start. Iron, stone, and the strongest army the age has seen.', bonus:'+15% unit strength', ability:'TRAIN', abilityDesc:'Once a season: drill the host — every military unit heals 25 and hardens.', vow:'THE CHAMPION', vowDesc:'End the Age with the largest army and at least one captured capital.', startGold:135, dev:{infra:36,dev:32,pop:36,wealth:30,def:58}},
 ];
 const CITY_NAMES={
- 0:['Bayhaven','Port Taren','Westmere','Calder Bay','Saltwick','Norhaven','Emberport','Kestrel Landing'],
- 1:['Ironhold','Ferrum','Anvil Rock','Cindervale','Hammerfall','Ostmark','Smelter’s Rest','Grimforge'],
- 2:['Goldfield','Aurelia','Sunmere','Harveston','Kingsgrain','Velden','Amber Court','Solhaven'],
- 3:['Pinehold','Volkhov','Nordwald','Frostmere','Timberfall','Ulvang','Winter Court','Bjornstead'],
- 4:['Marshcourt','Corvin’s Rest','Reedhaven','Saltmarsh','Duskport','Fenwick','Lowater','Gloomere'],
- 5:['Stormhaven','Sturmfels','Galeport','Thunder Bay','Windmere','Kestrel Rock','Tempest Court','Seawatch'],
+ 0:['Vienna','Fairfax Court','Oakton Vale','Merrifield','Dunn Loring','Wolftrap','Falls Church','Idylwood'],
+ 1:['Mount Vernon Square','George Towne','Alexandria','Fort Hunt','Hollin Hills','Waynewood','Groveton','Hybla Valley'],
+ 2:['Gwynn Oak','Baltemore','Pikes Vale','Catons Ford','Arbutus','Halethorpe','Lansdowne','Woodlawn'],
+ 3:['Louisa','Mineral',"Gordon's Vale",'Zion Crossroads','Spotsylvan','Stafford','Bumpass','Cuckoo'],
+ 4:['Tysens','McLean Ford','Great Falls','Pimmit Hills','Langley','Chesterbrook','Lewinsville','Salona'],
+ 5:["Clarke's Burgh",'Berry Ford','Millwood','White Post','Boyce','Waterloo Vale','Paris Ford','Ashby Gap'],
 };
 const CAPITALS=[0,1,2,3,4,5].map(i=>CITY_NAMES[i][0]);
 
@@ -298,6 +306,15 @@ function genMap(){
       if(t.terrain==='hills'&&t.moist>0.45) t.feature='forest';
     }
   }
+  /* Blue Ridge along the west, Shenandoah valley beneath it, Lake Anna by Louisa */
+  for(const t of tiles){
+    if(!isLand(t)) continue;
+    if(t.q<=1){ t.terrain='mountain'; t.feature=null; }
+    else if(t.q===2 && R()<0.75){ t.terrain='mountain'; t.feature=null; }
+    else if(t.q===3 && R()<0.6){ t.terrain='hills'; }
+    else if(t.q>=4 && t.q<=6 && t.terrain==='plains'){ t.terrain='grass'; }
+  }
+  for(const [lq,lr] of [[12,13],[13,13]]){ const lt=tileAt(lq,lr); if(lt&&isLand(lt)){ lt.terrain='bay'; lt.feature=null; lt.resource=null; } }
   /* resources — Chesapeake flavor */
   for(const t of tiles){
     const roll=R();
@@ -312,7 +329,7 @@ function genMap(){
   }
 }
 function yieldsOf(t, civIdx){
-  let y={food:0,prod:0,gold:0,sci:0,cul:0};
+  let y={food:0,prod:0,gold:0,sci:0,cul:0,timber:0,stone:0,iron:0};
   switch(t.terrain){
     case 'bay': y={food:2,prod:0,gold:1,sci:0,cul:0}; break;
     case 'deepwater': y={food:1,prod:0,gold:1,sci:0,cul:0}; break;
@@ -322,21 +339,25 @@ function yieldsOf(t, civIdx){
     case 'marsh': y={food:1,prod:0,gold:1,sci:0,cul:0}; break;
     case 'mountain': y={food:0,prod:1,gold:0,sci:0,cul:1}; break;
   }
-  if(t.feature==='forest'){y.prod+=1; y.food=Math.max(0,y.food- (t.terrain==='grass'?1:0));}
+  y.timber=y.timber||0; y.stone=y.stone||0; y.iron=y.iron||0;
+  if(t.feature==='forest'){y.prod+=1; y.timber+=1; y.food=Math.max(0,y.food- (t.terrain==='grass'?1:0));}
+  if(t.terrain==='hills') y.stone+=1;
+  if(t.terrain==='mountain') y.stone+=1;
   if(t.resource==='wheat') y.food+=1;
   if(t.resource==='horses') y.prod+=1;
   if(t.resource==='deer') y.food+=1;
-  if(t.resource==='iron') y.prod+=1;
+  if(t.resource==='iron'){ y.prod+=1; y.iron+=2; }
   if(t.resource==='crabs') y.gold+=2;
   if(t.resource==='oysters') y.gold+=1;
   if(t.resource==='fish') y.food+=1;
   if(t.resource==='salt') y.gold+=1;
   if(t.improve==='farm'){y.food+=2;}
   if(t.improve==='mine'){y.prod+=2;}
-  if(t.improve==='lumber'){y.prod+=1;}
-  if(civIdx===0 && (t.terrain==='bay'||t.terrain==='deepwater')) y.gold+=1; /* Maren */
-  if(civIdx===2 && (t.improve==='farm'||t.terrain==='plains')) y.food+= (t.improve==='farm'||t.resource==='wheat')?1:0; /* Aurelian simplified */
-  if(civIdx===3 && t.feature==='forest') y.prod+=1; /* Volkov */
+  if(t.improve==='lumber'){y.prod+=1; y.timber+=1;}
+  if(t.improve==='mine'){ if(t.resource==='iron') y.iron+=1; else y.stone+=1; }
+  if(civIdx===1 && (t.terrain==='bay'||t.terrain==='deepwater')) y.gold+=1; /* Abdul — boats of George Towne */
+  if(civIdx===3 && (t.improve==='farm'||t.terrain==='plains')) y.food+= (t.improve==='farm'||t.resource==='wheat')?1:0; /* Kameron — Louisa granaries */
+  if(civIdx===3 && t.feature==='forest') y.prod+=1; /* Kameron — Louisa timber */
   return y;
 }
 const TERRAIN_NAME={bay:'Bay Water',deepwater:'Open Water',plains:'Plains',grass:'Grassland',hills:'Hills',marsh:'Salt Marsh',mountain:'Mountains'};
@@ -344,22 +365,22 @@ const RES_NAME={crabs:'Blue Crabs',fish:'Fish',oysters:'Oysters',horses:'Horses'
 
 /* ---------------- GAME STATE ---------------- */
 let nextId=1;
-function newGame(playerIdx){
+function newGame(playerIdx, opts){
+  opts=opts||{};
+  if(opts.seed){ R=srand(opts.seed); }
   genMap(); cities=[]; units=[]; nextId=1;
-  G={turn:1, player:playerIdx, gold:[0,0,0,0,0,0].map(()=>120), sci:[0,0,0,0,0,0].map(()=>0),
+  G={turn:1, player:playerIdx, gold:PRINCES.map(p=>p.startGold), timber:[0,0,0,0,0,0].map(()=>45), stone:[0,0,0,0,0,0].map(()=>30), iron:[0,0,0,0,0,0].map(()=>12), abilityTurn:-99, eventIdx:0, campaign:'', difficulty:'Normal', seed:1612, vowMet:false, sci:[0,0,0,0,0,0].map(()=>0),
      culture:[0,0,0,0,0,0].map(()=>0), techs:PRINCES.map(()=>new Set()), researching:PRINCES.map(()=>null),
      atWar:PRINCES.map(()=>PRINCES.map(()=>false)), relations:PRINCES.map(()=>PRINCES.map((_,j)=>0)),
      alive:PRINCES.map(()=>true), chron:[], over:false, winner:-1, cityNameIdx:PRINCES.map(()=>1),
      difficulty:'Prince'};
   for(let i=0;i<6;i++) for(let j=0;j<6;j++) if(i!==j) G.relations[i][j]= 20+Math.floor(R()*25);
   /* capital sites: spread across the map, land, spaced */
-  const sites=[[5,4],[6,16],[13,7],[12,18],[26,5],[27,16]];
-  const order=[3,1,4,0,5,2]; /* assign sites to princes in a scattered order */
-  const princeSite={}; order.forEach((p,k)=>princeSite[p]=sites[k]);
+  const princeSite={0:[14,4],1:[20,7],2:[21,2],3:[11,12],4:[17,5],5:[5,3]}; /* Vienna, Mt Vernon Sq, Gwynn Oak, Louisa, Tysens, Clarke's Burgh */
   for(let p=0;p<6;p++){
     let [sq,sr]=princeSite[p];
     let t=tileAt(sq,sr); let guard=0;
-    while((!t||t.terrain==='bay'||t.terrain==='deepwater'||t.terrain==='mountain')&&guard++<300){
+    while((!t||t.terrain==='bay'||t.terrain==='deepwater'||t.terrain==='mountain'||t.terrain==='marsh')&&guard++<300){
       sq=clamp(sq+Math.floor(R()*5)-2,1,W-2); sr=clamp(sr+Math.floor(R()*5)-2,1,H-2); t=tileAt(sq,sr);
     }
     const c=foundCity(p,t,CITY_NAMES[p][0],true);
@@ -369,9 +390,13 @@ function newGame(playerIdx){
     const n2=axialNeighbors(t).find(x=>isLand(x)&&!x.unit&&x!==n) ;
     if(n2) spawnUnit(p,'scout',n2);
   }
+  G.campaign=opts.name||('The '+PRINCES[playerIdx].house); G.difficulty=opts.difficulty||'Normal'; G.seed=opts.seed||1612;
+  if(G.difficulty==='Easy'){ G.gold[playerIdx]+=80; G.timber[playerIdx]+=30; G.stone[playerIdx]+=20; }
+  if(G.difficulty==='Hard'){ G.gold[playerIdx]=Math.max(40,G.gold[playerIdx]-40); }
   G.researching=PRINCES.map(()=>'pottery');
-  log(`The chronicle opens. Six princes raise their banners over the Chesapeake.`,'major');
-  log(`You rule as Prince ${PRINCES[playerIdx].name} of ${PRINCES[playerIdx].house}.`,'good');
+  log(`The chronicle opens — ${G.campaign}. Six princes raise their banners between the Blue Ridge and the Bay.`,'major');
+  log(`You rule as ${PRINCES[playerIdx].name} of ${PRINCES[playerIdx].place}, ${PRINCES[playerIdx].title}. Your vow: ${PRINCES[playerIdx].vow}.`,'good');
+  if(G.difficulty==='Hard'){ for(let p=0;p<6;p++){ if(p!==playerIdx){ const cap=cities.find(c=>c.civ===p); const spot=axialNeighbors(cap.tile).find(n=>isLand(n)&&!n.unit&&!n.city); if(spot) spawnUnit(p,'warrior',spot); } } }
   centerOn(cities.find(c=>c.civ===playerIdx));
   updateUI();
 }
@@ -409,7 +434,7 @@ function moveCost(from,to,type,civ){
   if(!passable(to,type)) return 99;
   if(UNITS[type].naval) return 1;
   if(to.feature==='forest'||to.terrain==='hills') return 2;
-  if(to.terrain==='marsh') return civ===4?1:2;
+  if(to.terrain==='marsh') return 2;
   return 1;
 }
 function log(msg,cls){ if(!G) return; G.chron.unshift({turn:G.turn,msg,cls:cls||''}); if(G.chron.length>120)G.chron.pop(); renderChron(); }
@@ -468,6 +493,17 @@ function draw(){
     if(attackable.has(t)){ ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath(); ctx.strokeStyle='rgba(255,80,70,.95)'; ctx.lineWidth=2.5; ctx.stroke(); }
     if(selected && selected.tile===t){ ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath(); ctx.strokeStyle='#ffe98a'; ctx.lineWidth=3; ctx.stroke(); }
   }
+  /* region labels — the named geography of the age */
+  ctx.save(); ctx.textAlign='center';
+  const lbl=(txt,x,y,size,color,rot)=>{ ctx.save(); ctx.translate(x,y); if(rot) ctx.rotate(rot); ctx.font=`italic ${size}px Georgia`; ctx.fillStyle=color; ctx.fillText(txt,0,0); ctx.restore(); };
+  const bayLbl=hexXY(26,11); lbl('THE  CHESAPEAKE  BAY',bayLbl[0],bayLbl[1],15,'rgba(200,230,255,.50)',Math.PI/2.25);
+  const pot=hexXY(13,5); lbl('P O T O M A C',pot[0],pot[1]-14,11,'rgba(190,225,255,.45)');
+  const rap=hexXY(11,11); lbl('R A P P A H A N N O C K',rap[0],rap[1]-14,11,'rgba(190,225,255,.40)');
+  const jam=hexXY(10,16); lbl('J A M E S',jam[0],jam[1]-14,11,'rgba(190,225,255,.40)');
+  const ridge=hexXY(1,11); lbl('B L U E   R I D G E',ridge[0],ridge[1],12,'rgba(235,238,245,.42)',Math.PI/2);
+  const anna=hexXY(12,14); lbl('Lake Anna',anna[0],anna[1]+24,10,'rgba(190,225,255,.55)');
+  const shen=hexXY(5,8); lbl('Shenandoah Valley',shen[0],shen[1]-18,10.5,'rgba(240,235,200,.40)');
+  ctx.restore();
   /* cities then units */
   for(const c of cities) drawCity(c,time);
   for(const u of units) if(!u.tile.city || u.tile.city) drawUnit(u,time);
@@ -568,11 +604,13 @@ function drawMinimap(){
 function civCities(civ){return cities.filter(c=>c.civ===civ);}
 function civUnits(civ){return units.filter(u=>u.civ===civ);}
 function cityYields(c){
-  let y={food:1,prod:2,gold:1,sci:1,cul:1};
-  for(const t of tilesWithin(c.tile,2)){ if(t.owner===c.civ||hexDist(c.tile,t)<=1){ const ty=yieldsOf(t,c.civ); y.food+=ty.food*0.6; y.prod+=ty.prod*0.6; y.gold+=ty.gold*0.6; y.sci+=ty.sci*0.6; y.cul+=ty.cul*0.6; } }
+  let y={food:1,prod:2,gold:1,sci:1,cul:1,timber:0,stone:0,iron:0};
+  for(const t of tilesWithin(c.tile,2)){ if(t.owner===c.civ||hexDist(c.tile,t)<=1){ const ty=yieldsOf(t,c.civ); y.food+=ty.food*0.6; y.prod+=ty.prod*0.6; y.gold+=ty.gold*0.6; y.sci+=ty.sci*0.6; y.cul+=ty.cul*0.6; y.timber+=ty.timber*0.6; y.stone+=ty.stone*0.6; y.iron+=ty.iron*0.6; } }
   y.food+=c.pop*0.7; y.sci+=c.pop*0.35; y.cul+=c.pop*0.25; y.gold+=c.pop*0.3;
   if(c.buildings.has('granary')) y.food+=2;
-  if(c.buildings.has('library')) y.sci+=3;
+  if(c.buildings.has('library')){ y.sci+=3; if(c.civ===4) y.sci+=2; }
+  if(c.buildings.has('market')&&c.civ===2) y.gold+=2;
+  if(c.buildings.has('harbor')&&c.civ===2) y.gold+=2;
   if(c.buildings.has('market')) y.gold+=3;
   if(c.buildings.has('harbor')) {y.gold+=2; y.food+=1;}
   if(c.buildings.has('temple')) y.cul+=2;
@@ -581,7 +619,7 @@ function cityYields(c){
   return y;
 }
 function civYields(civ){
-  let y={food:0,prod:0,gold:0,sci:0,cul:0};
+  let y={food:0,prod:0,gold:0,sci:0,cul:0,timber:0,stone:0,iron:0};
   for(const c of civCities(civ)){ const cy=cityYields(c); for(const k in y) y[k]+=cy[k]; }
   const _nu=civUnits(civ).length; y.gold-=_nu*0.7+Math.max(0,_nu-10)*1.1; /* upkeep scales with army size */
   for(const k in y) y[k]=Math.round(y[k]*10)/10;
@@ -639,7 +677,7 @@ function makePeace(a,b){
 }
 function combatStrength(u,defTile,vsCity){
   let s=UNITS[u.type].str;
-  if(u.civ===1) s*=1.15;
+  if(u.civ===5) s*=1.15; /* Daouda — the Champion's host */
   if(G.techs[u.civ].has('bronze')&&(u.type==='warrior'||u.type==='spearman'||u.type==='swordsman')) s*=1.10;
   if(defTile&&(defTile.terrain==='hills'||defTile.feature==='forest')) s*=0.9; /* attacker penalty into cover */
   return s;
@@ -706,8 +744,13 @@ function trainOptions(c){
   }
   return opts;
 }
+const MAT_COST={granary:{timber:20},library:{timber:15},market:{timber:10},barracks:{timber:15,stone:10},harbor:{timber:25},temple:{stone:20},walls:{stone:30},spearman:{iron:5},swordsman:{iron:10},cavalry:{iron:10},catapult:{iron:15,timber:10},bombard:{iron:20,timber:10}};
 function finishProduction(c){
   const item=c.queue[0]; if(!item) return;
+  const mc=MAT_COST[item.id];
+  if(mc){ for(const k in mc){ if(G[k][c.civ]<mc[k]){ /* waiting on materials */ if(c.civ===G.player&&!c._matWarned){ c._matWarned=true; log(`${c.name} waits for ${k} to finish ${item.label}.`,''); } return; } }
+    for(const k in mc) G[k][c.civ]-=mc[k]; }
+  c._matWarned=false;
   c.prodStock-=item.cost; c.queue.shift();
   if(item.kind==='building'){ c.buildings.add(item.id); if(item.id==='walls'){c.maxhp+=150; c.hp+=150;} if(c.civ===G.player) log(`${c.name} completes ${item.label}.`,'good'); return; }
   let t=c.tile;
@@ -727,6 +770,7 @@ function nextCityName(civ){
 function processCity(c){
   const y=cityYields(c);
   G.gold[c.civ]+=y.gold; G.culture[c.civ]+=y.cul;
+  G.timber[c.civ]+=y.timber; G.stone[c.civ]+=y.stone; G.iron[c.civ]+=y.iron;
   c.foodStock+=y.food-c.pop*1.6;
   if(c.foodStock>14+c.pop*7){ c.foodStock=0; c.pop++; if(c.civ===G.player) log(`${c.name} grows to population ${c.pop}.`,'good'); claimTerritory(c); }
   if(c.foodStock<-6){ c.foodStock=0; if(c.pop>1){c.pop--; if(c.civ===G.player) log(`${c.name} starves — population falls.`,'war');} }
@@ -773,21 +817,41 @@ function endTurn(){
   G.turn++;
   for(const u of units) u.moveLeft=UNITS[u.type].move+(civBonusMove(u));
   for(const u of units) if(u.hp<100&&u.fortified) u.hp=Math.min(100,u.hp+12);
-  if(G.turn===150){ scoreVictory(); }
+  if(G.turn>80){ ageEnd(); }
   if(G.turn%4===1) seasonTick();
   updateUI();
   autosave();
   const idle=civUnits(G.player).filter(u=>u.moveLeft>0&&(UNITS[u.type].str>0||u.type==='settler'||u.type==='builder'));
   toast(`Turn ${G.turn} — ${idle.length? idle.length+' unit(s) awaiting orders':'all orders given'}`);
+  if(!G.over) maybeEvent();
 }
-function civBonusMove(u){ let m=0; if(u.civ===5) m+=1; if(G.techs[u.civ].has('wheel')&&isLand(u.tile)&&!UNITS[u.type].naval) m+= (u.tile.feature?0:1)*0; if(UNITS[u.type].naval&&G.techs[u.civ].has('astronomy')) m+=1; return m; }
+function civBonusMove(u){ let m=0; if(G.techs[u.civ].has('wheel')&&isLand(u.tile)&&!UNITS[u.type].naval) m+= (u.tile.feature?0:1)*0; if(UNITS[u.type].naval&&G.techs[u.civ].has('astronomy')) m+=1; return m; }
 function seasonTick(){ const seasons=['Spring','Summer','Autumn','Winter']; const yr=Math.floor((G.turn-1)/4)+1; /* flavor chronicle */
   if(R()<0.4){ const f=['A great blue-crab harvest fills the bay markets.','Storms lash the coast; the galleys stay in harbor.','A comet is seen over the bay. The court astrologers argue.','Traders from beyond the capes bring strange goods and stranger news.','The marshes bloom; fever and flowers in equal measure.'][Math.floor(R()*5)]; log(f,''); } }
-function scoreVictory(){
-  const scores=PRINCES.map((p,i)=>({i,s:Math.round(civCities(i).length*120+civUnits(i).length*22+G.techs[i].size*55+civCities(i).reduce((a,c)=>a+c.pop,0)*16+G.gold[i])})).sort((a,b)=>b.s-a.s);
-  const top=scores[0];
-  endGame(top.i===G.player, `Turn 150 — the chronicle is weighed. ${PRINCES[top.i].name} of ${PRINCES[top.i].house} leads with ${top.s} points. Your score: ${scores.find(s=>s.i===G.player).s}.`);
+function houseScore(i){ return Math.round(civCities(i).length*120+civUnits(i).filter(u=>UNITS[u.type].str>0).length*22+G.techs[i].size*55+civCities(i).reduce((a,c)=>a+c.pop,0)*16+G.gold[i]+G.culture[i]*0.5); }
+function vowMet(civ){
+  const P=G.player;
+  switch(civ){
+    case 0: return civCities(0).length>=5 && PRINCES.every((_,i)=>i===0||G.gold[0]>=G.gold[i]);
+    case 1: return PRINCES.every((_,i)=>i===1||!G.alive[i]||(!G.atWar[1][i]&&G.relations[1][i]>=40));
+    case 2: return PRINCES.every((_,i)=>i===2||G.gold[2]>=G.gold[i]);
+    case 3: { const cs=civCities(3); return cs.reduce((a,c)=>a+c.pop,0)>=40 && cs.every(c=>c.pop>=3); }
+    case 4: return G.techs[4].size>=12;
+    case 5: { const army=civUnits(5).filter(u=>UNITS[u.type].str>0).length; const biggest=PRINCES.every((_,i)=>i===5||civUnits(i).filter(u=>UNITS[u.type].str>0).length<=army);
+      return biggest && cities.some(c=>c.capital&&c.civ===5&&CAPITALS.indexOf(c.name)!==5&&c.name!==CITY_NAMES[5][0]); }
+  }
+  return false;
 }
+function ageEnd(){
+  if(G.over) return;
+  const scores=PRINCES.map((p,i)=>({i,s:houseScore(i)})).sort((a,b)=>b.s-a.s);
+  const top=scores[0]; const mine=scores.find(x=>x.i===G.player).s;
+  const vow=vowMet(G.player);
+  log(`THE AGE ENDS — ${PRINCES[top.i].name} leads the chronicle with ${top.s}. Your house: ${mine}. ${vow?'Your VOW is fulfilled: '+PRINCES[G.player].vow+'.':''}`,'major');
+  if(vow) endGame(true, `THE AGE ENDS — YOUR VOW IS FULFILLED\n\n${PRINCES[G.player].vow} — ${PRINCES[G.player].vowDesc}\n\nThe chronicle closes with your house ascendant (${mine} points). History will write your name first.`);
+  else endGame(top.i===G.player, `THE AGE ENDS\n\n${PRINCES[top.i].name} of ${PRINCES[top.i].house} leads the chronicle with ${top.s} points. Your house scored ${mine}.\n\nYour vow — ${PRINCES[G.player].vow} — went unfulfilled. The chroniclers are kind, but they are not liars.`);
+}
+function scoreVictory(){ ageEnd(); }
 /* ---------------- AI ---------------- */
 function aiTurn(civ){
   for(const c of [...civCities(civ)]) processCity(c);
@@ -807,7 +871,7 @@ function aiUnit(u){
   const D=UNITS[u.type];
   if(u.type==='settler'){
     let best=null,bs=-1; const region=landRegion(u.tile);
-    for(const t of region){ if(t.city) continue; if(cities.some(c=>hexDist(c.tile,t)<4)) continue;
+    for(const t of region){ if(t.city) continue; if(cities.some(c=>hexDist(c.tile,t)<3)) continue;
       const y=yieldsOf(t,u.civ); const s=y.food+y.prod+y.gold - hexDist(u.tile,t)*0.3; if(s>bs){bs=s;best=t;} }
     if(!best){ const home=civCities(u.civ).sort((a,b)=>hexDist(u.tile,a.tile)-hexDist(u.tile,b.tile))[0]; if(home&&u.tile!==home.tile) stepToward(u,home.tile); return; }
     if(u.tile!==best) stepToward(u,best);
@@ -878,8 +942,11 @@ function updateUI(){
   const p=G.player, y=civYields(p);
   $('yields').innerHTML=
    `<span><span class="y-ico" style="color:#e5c95e">●</span>Gold <b>${Math.floor(G.gold[p])}</b> (${y.gold>=0?'+':''}${y.gold})</span>`+
-   `<span><span class="y-ico" style="color:#7db3e8">⬢</span>Science <b>${y.sci}</b></span>`+
-   `<span><span class="y-ico" style="color:#c99ae0">♪</span>Culture <b>${Math.floor(G.culture[p])}</b> (+${y.cul})</span>`+
+   `<span><span class="y-ico" style="color:#7db3e8">⬢</span>Knowledge <b>+${y.sci}</b></span>`+
+   `<span><span class="y-ico" style="color:#c99ae0">♪</span>Influence <b>${Math.floor(G.culture[p])}</b> (+${y.cul})</span>`+
+   `<span><span class="y-ico" style="color:#a9805a">♣</span>Timber <b>${Math.floor(G.timber[p])}</b> (+${y.timber})</span>`+
+   `<span><span class="y-ico" style="color:#b9c2cc">▲</span>Stone <b>${Math.floor(G.stone[p])}</b> (+${y.stone})</span>`+
+   `<span><span class="y-ico" style="color:#d8dde3">◆</span>Iron <b>${Math.floor(G.iron[p])}</b> (+${y.iron})</span>`+
    `<span><span class="y-ico" style="color:#a9d6a9">❦</span>Food <b>+${y.food}</b></span>`+
    `<span><span class="y-ico" style="color:#e0a35e">⚒</span>Prod <b>+${y.prod}</b></span>`+
    `<span><span class="y-ico" style="color:#e79a9a">⚔</span>Army <b>${civUnits(p).length}</b></span>`+
@@ -893,6 +960,8 @@ function updateUI(){
       <span><span class="pn">${pr.name}${i===p?' (You)':''}</span><br><span class="pc">${pr.house} · ${civCities(i).length} cities</span></span>
       <span class="rel">${rel}</span></div>`;}).join('');
   document.querySelectorAll('.prince').forEach(el=>el.onclick=()=>{ const i=+el.dataset.civ; if(i!==p&&G.alive[i]) openDiplomacy(i); });
+  $('btn-ability').textContent=(G.abilityTurn===G.turn?'ABILITY SPENT ✓ ':'ABILITY · ')+PRINCES[p].ability;
+  $('btn-ability').title=PRINCES[p].abilityDesc;
   renderTechBar(); renderChron(); updateEndTurnBtn();
 }
 function renderTechBar(){
@@ -979,12 +1048,80 @@ function bindPanelButtons(){
     if(act==='train'&&selected.city){ const c=selected.city; const all=trainOptions(c); const o=all.find(x=>x.id===b.dataset.id&&x.kind===b.dataset.kind); if(o){ c.queue.push(o); log(`${c.name} begins ${o.label}.`,''); renderSelPanel(); } }
   });
 }
+/* ---------------- HOUSE ABILITIES (once per season) ---------------- */
+function useAbility(){
+  const p=G.player; if(G.abilityTurn===G.turn){ toast('Your house ability is spent for this season'); return; }
+  G.abilityTurn=G.turn;
+  switch(p){
+    case 0: for(const u of civUnits(0)) u.moveLeft+=2; G.gold[0]+=15; log('ADAPT — Vienna shifts with the wind: your host moves swiftly and the crossroads pay.','good'); break;
+    case 1: { const rivals=PRINCES.map((_,i)=>i).filter(i=>i!==1&&G.alive[i]); const r=rivals.sort((a,b)=>civUnits(b).length-civUnits(a).length)[0];
+      G.sci[1]+=20; toast(`OBSERVE — ${PRINCES[r].name}: ${civCities(r).length} cities, ${civUnits(r).length} units, ${Math.floor(G.gold[r])} gold`); log(`OBSERVE — your night-eyes report ${PRINCES[r].name}'s true strength.`,'good'); break; }
+    case 2: { G.gold[2]+=45; const low=PRINCES.map((_,i)=>i).filter(i=>i!==2&&G.alive[i]).sort((a,b)=>G.relations[2][a]-G.relations[2][b]).slice(0,2); for(const i of low) G.relations[2][i]+=8;
+      log('BROKER DEAL — Josiah arranges what others could not. The coffer swells; two rivals warm.','good'); break; }
+    case 3: for(const c of civCities(3)) c.foodStock+=12; G.culture[3]+=15; log('HOLD COMPOSURE — Louisa is calm, and the granaries fill.','good'); break;
+    case 4: { G.sci[4]+=35; const rivals=PRINCES.map((_,i)=>i).filter(i=>i!==4&&G.alive[i]); const r=rivals[0];
+      toast(`ANALYZE — ${PRINCES[r].name} researches ${G.researching[r]?techById(G.researching[r]).name:'nothing'}; the ledger is open to you`); log('ANALYZE — the academy sees the season whole. +35 Knowledge.','good'); break; }
+    case 5: for(const u of civUnits(5)) if(UNITS[u.type].str>0) u.hp=Math.min(100,u.hp+25); log('TRAIN — the Champion drills his host. Wounds close; spears steady.','good'); break;
+  }
+  updateUI();
+}
+$('btn-ability').onclick=useAbility;
+
+/* ---------------- DECIDE — the season's crisis ---------------- */
+const EVENTS=[
+ {t:'The western road is mud', x:'Spring rains have drowned the western road. Caravans wallow axle-deep, and the merchants look to your court.', a:{l:'Rebuild it now', d:'Caravans move again at once. +35 Gold', fx:{gold:35,timber:-30}}, b:{l:'Let it dry', d:'Roads stay slow a while. The timber stays yours; trade brings 15 less gold.', fx:{gold:-15}}},
+ {t:'A great crab harvest', x:'The bay gives beyond memory — boats come in low in the water, holds blue with crabs.', a:{l:'Feast the shore towns', d:'+20 Influence, the people love you', fx:{cul:20,gold:-10}}, b:{l:'Sell the whole catch', d:'+40 Gold', fx:{gold:40}}},
+ {t:'Storm on the Ridge', x:'A storm off the Blue Ridge tears roofs from barns in the valley settlements.', a:{l:'Send timber and crews', d:'-25 Timber, +12 Influence — they remember who came', fx:{timber:-25,cul:12}}, b:{l:'Each town for itself', d:'A border settlement shrinks (-1 population in a random city)', fx:{pop:-1}}},
+ {t:'Scholars from across the water', x:'Two scholars arrive with charts, lenses, and dangerous questions. They ask only for a roof and candles.', a:{l:'Found them a study', d:'-20 Gold, +30 Knowledge', fx:{gold:-20,sci:30}}, b:{l:'Send them to a rival', d:'+10 relations with a random rival — knowledge is a gift that binds', fx:{relRand:10}}},
+ {t:'Iron in the hills', x:'A shepherd kicks a stone that rings wrong. Your surveyors say the hills are richer than anyone knew.', a:{l:'Work the seam at once', d:'+25 Iron, -10 Timber for pit-props', fx:{iron:25,timber:-10}}, b:{l:'Seal it for a needier year', d:'+8 Influence — the court praises your patience', fx:{cul:8}}},
+ {t:'Marsh fever', x:'Fever comes off the salt marsh with the evening mist. Two settlements are afraid.', a:{l:'Pay the physicians', d:'-30 Gold, the fever breaks', fx:{gold:-30}}, b:{l:'Quarantine and prayer', d:'A city loses 1 population; +6 Influence for your piety', fx:{pop:-1,cul:6}}},
+ {t:'The harvest festival', x:'A fat harvest, and every village wants a festival with your banner over the green.', a:{l:'Fund the festival', d:'-15 Gold, +18 Influence', fx:{gold:-15,cul:18}}, b:{l:'Tax the festival instead', d:'+25 Gold, -8 Influence', fx:{gold:25,cul:-8}}},
+ {t:'An envoy at midnight', x:'A rival\'s envoy arrives after dark with a sealed letter and no witnesses.', a:{l:'Hear him out', d:'+14 relations with a random rival, +10 Knowledge of courts', fx:{relRand:14,sci:10}}, b:{l:'Send him home unheard', d:'+6 Influence — your court is not for sale', fx:{cul:6}}},
+ {t:'Timber blight', x:'Worm in the pine stands. Half your best forest is dying on the stump.', a:{l:'Fell it fast and sell', d:'+30 Gold, -15 Timber', fx:{gold:30,timber:-15}}, b:{l:'Burn the blighted stands', d:'-20 Timber; the forest is saved (nothing gained but time)', fx:{timber:-20}}},
+ {t:"The masons' guild petitions", x:'The stone masons ask for a charter and a guildhall — and offer their loyalty forever.', a:{l:'Grant the charter', d:'-20 Stone, +14 Influence', fx:{stone:-20,cul:14}}, b:{l:'Refuse them', d:'+10 Stone in dues; the guild sullenly pays', fx:{stone:10}}},
+ {t:'A hard winter is foretold', x:'The oldest shepherds agree: a killing winter comes. The stores are not ready.', a:{l:'Buy grain now', d:'-25 Gold; every city +8 food stores', fx:{gold:-25,foodAll:8}}, b:{l:'Trust to fortune', d:'Nothing now. Fortune keeps her own ledger.', fx:{}}},
+ {t:'Deserters from a rival host', x:'Nine soldiers from a rival army ask sanctuary at your border fort, with their spears.', a:{l:'Take their oath', d:'A Warrior joins your host at your capital', fx:{unit:'warrior'}}, b:{l:'Send them back in chains', d:'+12 relations with a random rival', fx:{relRand:12}}},
+];
+function applyFx(fx){
+  const p=G.player;
+  if(fx.gold) G.gold[p]=Math.max(0,G.gold[p]+fx.gold);
+  if(fx.timber) G.timber[p]=Math.max(0,G.timber[p]+fx.timber);
+  if(fx.stone) G.stone[p]=Math.max(0,G.stone[p]+fx.stone);
+  if(fx.iron) G.iron[p]=Math.max(0,G.iron[p]+fx.iron);
+  if(fx.sci) G.sci[p]+=fx.sci;
+  if(fx.cul) G.culture[p]+=fx.cul;
+  if(fx.foodAll) for(const c of civCities(p)) c.foodStock+=fx.foodAll;
+  if(fx.pop){ const cs=civCities(p); if(cs.length){ const c=cs[Math.floor(R()*cs.length)]; c.pop=Math.max(1,c.pop+fx.pop); log(`In ${c.name}, the season's choice is felt — population ${fx.pop>0?'grows':'falls'}.`,''); } }
+  if(fx.relRand){ const rivals=PRINCES.map((_,i)=>i).filter(i=>i!==p&&G.alive[i]); if(rivals.length){ const r=rivals[Math.floor(R()*rivals.length)]; G.relations[p][r]+=fx.relRand; G.relations[r][p]+=fx.relRand; log(`Word of your choice reaches ${PRINCES[r].name} — relations warm.`,''); } }
+  if(fx.unit){ const cap=civCities(p)[0]; if(cap){ const spot=axialNeighbors(cap.tile).find(n=>isLand(n)&&!n.unit&&!n.city)||cap.tile; const u=spawnUnit(p,fx.unit,spot); if(u) log('The deserters take your oath and your colors.','good'); } }
+}
+function maybeEvent(){
+  if(!G||G.over||G.turn<2) return;
+  if(G.turn%2!==0) return;
+  const ev=EVENTS[G.eventIdx%EVENTS.length]; G.eventIdx++;
+  $('evtitle').textContent=ev.t.toUpperCase();
+  const seasons=['Spring','Summer','Autumn','Winter'];
+  $('evsub').textContent=`${seasons[(G.turn-1)%4]}, Year ${Math.floor((G.turn-1)/4)+1} · a decision waits`;
+  $('evtext').textContent=ev.x;
+  $('evopts').innerHTML='';
+  for(const k of ['a','b']){ const o=ev[k]; const btn=document.createElement('button'); btn.className='abtn'; btn.innerHTML=`${o.l}<small>${o.d}</small>`;
+    btn.onclick=()=>{ applyFx(o.fx); log(`DECIDE — ${ev.t}: you chose “${o.l}”.`,'major'); $('eventmodal').classList.remove('open'); updateUI(); };
+    $('evopts').appendChild(btn); }
+  $('eventmodal').classList.add('open');
+}
+
 /* ---------------- DIPLOMACY ---------------- */
 let dipCiv=-1;
 function openDiplomacy(i){
   dipCiv=i; const pr=PRINCES[i], p=G.player;
   $('dipname').innerHTML=`<span style="color:${pr.color}">Prince ${pr.name}</span> — ${pr.house}`;
-  $('dipsub').textContent=`${pr.title}. ${pr.trait} Relation: ${G.relations[p][i]} · ${G.atWar[p][i]?'AT WAR':'At peace'} · Cities: ${civCities(i).length} · Army: ${civUnits(i).length}`;
+  const rel=G.relations[p][i];
+  const trust=clamp(Math.round(rel*0.8+(G.atWar[p][i]?-45:12)),-100,100), respect=clamp(Math.round(50+(civUnits(i).length-civUnits(p).length)*4),0,100), rivalry=clamp(70-rel,0,100);
+  const known=rel>=20, inferred=rel>-20;
+  $('dipsub').innerHTML=`${pr.title}. ${pr.trait}<br>Friendship <b style="color:#fff">${rel}</b> · Trust <b style="color:#fff">${trust}</b> · Respect <b style="color:#fff">${respect}</b> · Rivalry <b style="color:#fff">${rivalry}</b> · ${G.atWar[p][i]?'AT WAR':'At peace'}<br>`+
+   (known?`WHAT YOU KNOW — <b style="color:#a9d6a9">KNOWN</b>: ${civCities(i).length} cities, ${civUnits(i).length} units, treasury ${Math.floor(G.gold[i])} gold, researching ${G.researching[i]?techById(G.researching[i]).name:'—'}.`
+        : inferred?`WHAT YOU KNOW — <b style="color:#e8c766">INFERRED</b>: perhaps ${Math.max(1,civCities(i).length+(R()>0.5?1:-1))} cities and ${Math.max(1,civUnits(i).length+2)} units. Ledgers disagree.`
+        :`WHAT YOU KNOW — <b style="color:#e79a9a">UNKNOWN</b>: ${pr.name}'s court is closed to you. Gifts open doors; war opens graves.`);
   let h='';
   if(G.atWar[p][i]) h+=`<button class="abtn" data-dip="peace">Sue for Peace<small>They ${G.relations[p][i]>-10||civUnits(i).length<civUnits(p).length?'may accept':'will likely refuse while they smell weakness'}</small></button>`;
   else h+=`<button class="abtn" data-dip="war">Declare War<small>The chronicle will remember who started it</small></button>`;
@@ -1055,7 +1192,7 @@ $('btn-menu').onclick=()=>{ if(confirm('Abandon this game and return to prince s
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
 /* ---------------- SAVE / LOAD ---------------- */
 function serialize(){
-  return JSON.stringify({turn:G.turn,player:G.player,gold:G.gold,sci:G.sci,culture:G.culture,
+  return JSON.stringify({turn:G.turn,player:G.player,gold:G.gold,sci:G.sci,culture:G.culture,timber:G.timber,stone:G.stone,iron:G.iron,abilityTurn:G.abilityTurn,eventIdx:G.eventIdx,campaign:G.campaign,difficulty:G.difficulty,seed:G.seed,
     techs:G.techs.map(s=>[...s]),researching:G.researching,atWar:G.atWar,relations:G.relations,alive:G.alive,
     cityNameIdx:G.cityNameIdx,chron:G.chron.slice(0,40),
     tiles:tiles.map(t=>({terrain:t.terrain,feature:t.feature,resource:t.resource,improve:t.improve,owner:t.owner})),
@@ -1069,17 +1206,45 @@ function loadFrom(s){
   const d=JSON.parse(s); genMap();
   d.tiles.forEach((td,i)=>{ Object.assign(tiles[i],td); });
   cities=[]; units=[]; nextId=1;
-  G={turn:d.turn,player:d.player,gold:d.gold,sci:d.sci,culture:d.culture,techs:d.techs.map(a=>new Set(a)),researching:d.researching,
-     atWar:d.atWar,relations:d.relations,alive:d.alive,chron:d.chron||[],over:false,winner:-1,cityNameIdx:d.cityNameIdx,difficulty:'Prince'};
+  G={turn:d.turn,player:d.player,gold:d.gold,sci:d.sci,culture:d.culture,timber:d.timber||PRINCES.map(()=>45),stone:d.stone||PRINCES.map(()=>30),iron:d.iron||PRINCES.map(()=>12),abilityTurn:d.abilityTurn??-99,eventIdx:d.eventIdx||0,campaign:d.campaign||'',seed:d.seed||1612,techs:d.techs.map(a=>new Set(a)),researching:d.researching,
+     atWar:d.atWar,relations:d.relations,alive:d.alive,chron:d.chron||[],over:false,winner:-1,cityNameIdx:d.cityNameIdx,difficulty:d.difficulty||'Normal'};
   for(const cd of d.cities){ const t=tileAt(cd.q,cd.r); const c={id:nextId++,civ:cd.civ,tile:t,name:cd.name,pop:cd.pop,hp:cd.hp,maxhp:cd.maxhp,buildings:new Set(cd.buildings),queue:cd.queue,prodStock:cd.prodStock,foodStock:cd.foodStock,capital:cd.capital}; t.city=c; cities.push(c); }
   for(const ud of d.units){ spawnUnit(ud.civ,ud.type,tileAt(ud.q,ud.r)); const u=units[units.length-1]; if(u){u.hp=ud.hp; u.charges=ud.charges||0;} }
   $('start').style.display='none'; clearSel(); centerOn(cities.find(c=>c.civ===G.player)||cities[0]); updateUI();
 }
 /* ---------------- START ---------------- */
 $('pick').innerHTML=PRINCES.map((p,i)=>`<div class="pcard" data-pick="${i}" style="border-top-color:${p.color}">
-  <div class="crown" style="color:${p.color}">♛</div><b>${p.name}</b><div class="house">${p.house}</div>
+  <div class="crown" style="color:${p.color}">♛</div><b>${p.name}</b><div class="house">${p.house} · ${p.place}</div>
   <div class="trait">${p.trait}</div><div class="bonus">${p.bonus}</div></div>`).join('');
-document.querySelectorAll('[data-pick]').forEach(el=>el.onclick=()=>{ newGame(+el.dataset.pick); $('start').style.display='none'; });
+let selPrince=-1, selDiff='Normal', selSeed=100000000+Math.floor(Math.random()*899999999);
+function bar(label,v,color){ return `<div style="display:flex; align-items:center; gap:8px; font-size:11.5px; margin:2.5px 0"><span style="width:96px; text-align:right; color:#9b8f6e; letter-spacing:1px">${label}</span><span style="flex:1; height:8px; background:#000; border:1px solid #3d4757"><span style="display:block; height:100%; width:${v}%; background:${color}"></span></span><span style="color:#fff; width:22px">${v}</span></div>`; }
+function showHouse(i){
+  selPrince=i; const p=PRINCES[i];
+  document.querySelectorAll('[data-pick]').forEach(el=>el.style.borderColor=+el.dataset.pick===i?'var(--gold2)':'');
+  $('housedetail').innerHTML=`<div style="text-align:left; background:linear-gradient(180deg,rgba(26,33,46,.97),rgba(13,17,24,.97)); border:1px solid var(--line); border-top:4px solid ${p.color}; border-radius:5px; padding:16px 20px; margin-top:6px">
+   <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:18px">
+    <div><div style="font-size:21px; color:#fff">${p.name} of ${p.place}</div>
+     <div style="letter-spacing:2px; color:#9b8f6e; font-size:11px; text-transform:uppercase">${p.title} · ${p.house}</div>
+     <p style="color:#cfc4a2; font-size:13px; line-height:1.5; margin-top:8px">${p.trait}</p>
+     <p style="color:var(--gold2); font-size:12.5px; margin-top:6px">ABILITY · ${p.ability} — ${p.abilityDesc}</p>
+     <p style="color:#e8c766; font-size:12.5px; margin-top:6px">THE VOW · ${p.vow} — ${p.vowDesc}</p>
+     <p style="color:#bdb294; font-size:12.5px; margin-top:8px">LANDS — capital ${CITY_NAMES[i][0]}; settlements ${CITY_NAMES[i].slice(1,5).join(', ')}</p></div>
+    <div><div style="font-size:10.5px; letter-spacing:2px; color:#9b8f6e; margin-bottom:5px">THE HOUSE IN NUMBERS</div>
+     ${bar('Infrastructure',p.dev.infra,'#8a8f98')}${bar('Development',p.dev.dev,'#7db3e8')}${bar('Population',p.dev.pop,'#a9d6a9')}${bar('Wealth',p.dev.wealth,'#e8c766')}${bar('Defense',p.dev.def,'#e79a9a')}</div>
+    <div><div style="font-size:10.5px; letter-spacing:2px; color:#9b8f6e; margin-bottom:5px">WRITE THIS HOUSE'S HISTORY</div>
+     <label style="font-size:11.5px; color:#bdb294">Campaign name</label>
+     <input id="campname" value="The ${p.house}" style="width:100%; background:#0d1117; color:#fff; border:1px solid #3d4757; padding:6px 8px; margin:4px 0 8px; font-family:inherit">
+     <div style="font-size:11.5px; color:#bdb294; margin-bottom:4px">Difficulty · Seed <span style="color:#fff">${selSeed}</span></div>
+     <div>${['Easy','Normal','Hard'].map(d=>`<button class="tbtn" data-diff="${d}" style="${d===selDiff?'border-color:var(--gold2); color:#fff':''}">${d}</button>`).join(' ')}</div>
+     <div style="font-size:11px; color:#8a8065; margin:6px 0 10px">${selDiff==='Easy'?'Fuller stores, gentler rivals':selDiff==='Hard'?'Thin stores, hungrier rivals':'The age as it was written'} · Twenty years. Four seasons a year. Same seed, same choices, same history.</div>
+     <div style="font-size:12px; color:#bdb294; margin-bottom:10px">Starts: ${p.startGold} Gold · 45 Timber · 30 Stone · 12 Iron · 6 Soldiers' worth of host (Warrior, Settler, Scout)</div>
+     <button id="btn-begin" class="tbtn" style="background:radial-gradient(ellipse at 50% 30%, #8a6d14, #554207 70%); border-color:var(--gold2); color:#fff; font-size:15px; padding:10px 22px; letter-spacing:2px">BEGIN CAMPAIGN</button></div>
+   </div></div>`;
+  document.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{ selDiff=b.dataset.diff; showHouse(selPrince); });
+  $('btn-begin').onclick=()=>{ newGame(selPrince,{name:$('campname').value,difficulty:selDiff,seed:selSeed}); $('start').style.display='none'; };
+}
+document.querySelectorAll('[data-pick]').forEach(el=>el.onclick=()=>showHouse(+el.dataset.pick));
+showHouse(3);
 draw();
 </script>
 </body>
