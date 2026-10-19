@@ -497,9 +497,9 @@ function draw(){
   ctx.save(); ctx.textAlign='center';
   const lbl=(txt,x,y,size,color,rot)=>{ ctx.save(); ctx.translate(x,y); if(rot) ctx.rotate(rot); ctx.font=`italic ${size}px Georgia`; ctx.fillStyle=color; ctx.fillText(txt,0,0); ctx.restore(); };
   const bayLbl=hexXY(26,11); lbl('THE  CHESAPEAKE  BAY',bayLbl[0],bayLbl[1],15,'rgba(200,230,255,.50)',Math.PI/2.25);
-  const pot=hexXY(13,5); lbl('P O T O M A C',pot[0],pot[1]-14,11,'rgba(190,225,255,.45)');
-  const rap=hexXY(11,11); lbl('R A P P A H A N N O C K',rap[0],rap[1]-14,11,'rgba(190,225,255,.40)');
-  const jam=hexXY(10,16); lbl('J A M E S',jam[0],jam[1]-14,11,'rgba(190,225,255,.40)');
+  const pot=hexXY(15,5); lbl('P O T O M A C',pot[0],pot[1]+4,11.5,'rgba(200,232,255,.68)');
+  const rap=hexXY(11,11); lbl('R A P P A H A N N O C K',rap[0],rap[1]-14,11,'rgba(190,225,255,.58)');
+  const jam=hexXY(12,17); lbl('J A M E S',jam[0],jam[1]+4,11.5,'rgba(200,232,255,.68)');
   const ridge=hexXY(1,11); lbl('B L U E   R I D G E',ridge[0],ridge[1],12,'rgba(235,238,245,.42)',Math.PI/2);
   const anna=hexXY(12,14); lbl('Lake Anna',anna[0],anna[1]+24,10,'rgba(190,225,255,.55)');
   const shen=hexXY(5,8); lbl('Shenandoah Valley',shen[0],shen[1]-18,10.5,'rgba(240,235,200,.40)');
