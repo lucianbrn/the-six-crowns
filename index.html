@@ -1,196 +1,1086 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Six Crowns - Medieval Strategy RPG</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE SIX PRINCES — Chesapeake</title>
+<style>
+:root{
+  --gold:#c9a227; --gold2:#e8c766; --parch:#e9dfc8; --ink:#0d1117;
+  --panel:rgba(13,17,24,.88); --panel2:rgba(20,26,36,.92); --line:rgba(201,162,39,.45);
+  --red:#b33a3a; --green:#4d7c4d;
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html,body{height:100%; overflow:hidden; background:#06090e; font-family:Georgia,'Times New Roman',serif; color:var(--parch)}
+button{font-family:inherit; cursor:pointer}
+#map{position:fixed; inset:0; display:block; background:#0a141f}
+/* ---------- TOP BAR ---------- */
+#topbar{position:fixed; top:0; left:0; right:0; height:52px; display:flex; align-items:center; gap:14px;
+  padding:0 14px; background:linear-gradient(180deg,rgba(8,10,14,.96),rgba(8,10,14,.82)); border-bottom:2px solid var(--line); z-index:20}
+#topbar .title{font-size:19px; letter-spacing:3px; color:var(--gold2); white-space:nowrap; font-weight:bold}
+#topbar .title small{display:block; font-size:9px; letter-spacing:4px; color:#9b8f6e}
+.yields{display:flex; gap:14px; font-size:13.5px; margin-left:8px; flex-wrap:nowrap; overflow:hidden}
+.yields span{white-space:nowrap}
+.yields b{color:#fff}
+.y-ico{display:inline-block; width:15px; text-align:center; margin-right:3px}
+#turnbox{margin-left:auto; text-align:right; line-height:1.05; white-space:nowrap}
+#turnbox #turnlbl{font-size:16px; color:#fff; letter-spacing:1px}
+#turnbox #seasonlbl{font-size:10.5px; color:#9b8f6e; letter-spacing:2px; text-transform:uppercase}
+.tbtn{background:linear-gradient(180deg,#2a3444,#171e2a); color:var(--parch); border:1px solid var(--line);
+  padding:6px 11px; font-size:12px; letter-spacing:1px; border-radius:3px}
+.tbtn:hover{border-color:var(--gold2); color:#fff}
+/* ---------- TECH BAR ---------- */
+#techbar{position:fixed; top:60px; left:10px; width:238px; background:var(--panel); border:1px solid var(--line);
+  border-radius:4px; padding:9px 11px; z-index:15; cursor:pointer}
+#techbar:hover{border-color:var(--gold2)}
+#techbar .th{font-size:10px; letter-spacing:2.5px; color:#9b8f6e}
+#techbar .tn{font-size:15.5px; color:#fff; margin:2px 0 5px}
+.pbar{height:7px; background:#000; border:1px solid #444; border-radius:3px; overflow:hidden}
+.pbar>div{height:100%; background:linear-gradient(90deg,#7d5f10,var(--gold2)); transition:width .3s}
+#techbar .tp{font-size:11px; color:#bdb294; margin-top:4px}
+/* ---------- LEFT PANEL (selection) ---------- */
+#selpanel{position:fixed; left:10px; bottom:10px; width:308px; max-height:56vh; overflow-y:auto; background:var(--panel);
+  border:1px solid var(--line); border-radius:4px; padding:12px 13px; z-index:15; display:none}
+#selpanel h2{font-size:17px; color:#fff; letter-spacing:.5px}
+#selpanel h3{font-size:10.5px; letter-spacing:2.5px; color:var(--gold2); margin:11px 0 5px}
+#selpanel .sub{font-size:12px; color:#bdb294}
+#selpanel .stats{display:grid; grid-template-columns:1fr 1fr; gap:3px 10px; font-size:12.5px; margin-top:6px}
+#selpanel .stats b{color:#fff; float:right}
+.abtn{display:block; width:100%; text-align:left; margin:4px 0; background:linear-gradient(180deg,#232d3d,#141a24);
+  color:var(--parch); border:1px solid #3d4757; padding:7px 9px; font-size:12.5px; border-radius:3px}
+.abtn:hover:not(:disabled){border-color:var(--gold2); color:#fff}
+.abtn:disabled{opacity:.42; cursor:not-allowed}
+.abtn small{display:block; color:#9b8f6e; font-size:11px}
+.abtn .cost{float:right; color:var(--gold2)}
+.hpbar{height:8px; background:#20090a; border:1px solid #5a2b2b; border-radius:3px; overflow:hidden; margin-top:5px}
+.hpbar>div{height:100%; background:linear-gradient(90deg,#7d2222,#c34a4a)}
+/* ---------- RIGHT ROSTER ---------- */
+#roster{position:fixed; top:60px; right:10px; width:216px; background:var(--panel); border:1px solid var(--line);
+  border-radius:4px; padding:9px 10px; z-index:15}
+#roster h3{font-size:10px; letter-spacing:2.5px; color:#9b8f6e; margin-bottom:6px}
+.prince{display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:3px; cursor:pointer; border:1px solid transparent}
+.prince:hover{background:rgba(255,255,255,.05); border-color:#3d4757}
+.prince.dead{opacity:.38; filter:grayscale(1)}
+.prince .dot{width:15px; height:15px; border-radius:50%; border:2px solid rgba(255,255,255,.65); flex:none; box-shadow:0 1px 4px #000}
+.prince .pn{font-size:13px; color:#fff; line-height:1.05}
+.prince .pc{font-size:10.5px; color:#9b8f6e}
+.prince .rel{margin-left:auto; font-size:14px}
+#minimap{width:100%; height:118px; display:block; margin-top:8px; border:1px solid #3d4757; border-radius:3px; background:#081018}
+/* ---------- CHRONICLE ---------- */
+#chron{position:fixed; right:10px; bottom:86px; width:330px; max-height:30vh; overflow-y:auto; background:var(--panel);
+  border:1px solid var(--line); border-radius:4px; padding:8px 11px; z-index:14; font-size:12px}
+#chron h3{font-size:10px; letter-spacing:2.5px; color:#9b8f6e; margin-bottom:4px}
+#chron div{padding:2.5px 0; border-bottom:1px solid rgba(255,255,255,.05); color:#cfc4a2}
+#chron div.war{color:#e79a9a} #chron div.good{color:#a9d6a9} #chron div.major{color:var(--gold2)}
+/* ---------- END TURN ---------- */
+#endturn{position:fixed; right:12px; bottom:12px; z-index:25; width:196px; height:62px; border-radius:6px;
+  background:radial-gradient(ellipse at 50% 30%, #8a6d14, #554207 70%); border:2px solid var(--gold2);
+  color:#fff; font-size:19px; letter-spacing:2.5px; box-shadow:0 4px 22px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.35)}
+#endturn:hover{filter:brightness(1.18)}
+#endturn small{display:block; font-size:9.5px; letter-spacing:2px; color:#e8d9a0}
+#endturn.notify{animation:pulse 1.1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,199,102,.0),0 4px 22px #000}50%{box-shadow:0 0 22px 4px rgba(232,199,102,.55),0 4px 22px #000}}
+#hintbar{position:fixed; bottom:12px; left:50%; transform:translateX(-50%); background:rgba(8,10,14,.85);
+  border:1px solid #3d4757; padding:6px 16px; font-size:12px; color:#bdb294; border-radius:20px; z-index:13; white-space:nowrap}
+/* ---------- MODALS ---------- */
+.modal{position:fixed; inset:0; background:rgba(3,5,8,.72); display:none; align-items:center; justify-content:center; z-index:40}
+.modal.open{display:flex}
+.mbox{background:linear-gradient(180deg,#1a212e,#10151e); border:2px solid var(--line); border-radius:6px;
+  width:min(860px,94vw); max-height:88vh; overflow-y:auto; padding:22px 26px; box-shadow:0 18px 60px #000}
+.mbox h2{color:var(--gold2); letter-spacing:3px; font-size:21px; margin-bottom:4px}
+.mbox .msub{color:#9b8f6e; font-size:12.5px; margin-bottom:14px}
+.mclose{float:right}
+.techgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:8px}
+.tech{background:#141a24; border:1px solid #3d4757; padding:9px 11px; border-radius:4px; font-size:12.5px}
+.tech.done{border-color:var(--green); opacity:.75}
+.tech.avail:hover{border-color:var(--gold2); cursor:pointer}
+.tech.locked{opacity:.45}
+.tech b{color:#fff; display:block; font-size:13.5px}
+.tech small{color:#9b8f6e}
+/* ---------- START SCREEN ---------- */
+#start{position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at 50% 120%, rgba(38,58,84,.9), rgba(4,6,10,.97) 65%)}
+#start .box{text-align:center; width:min(1060px,96vw); padding:20px}
+#start h1{font-size:52px; letter-spacing:10px; color:var(--gold2); text-shadow:0 3px 0 #4a3805, 0 10px 34px #000}
+#start .tag{letter-spacing:5px; color:#bdb294; font-size:13px; margin:8px 0 4px; text-transform:uppercase}
+#start .lore{max-width:700px; margin:10px auto 20px; color:#cfc4a2; font-size:14.5px; line-height:1.55; font-style:italic}
+.pick{display:grid; grid-template-columns:repeat(auto-fit,minmax(152px,1fr)); gap:10px; margin:14px 0 20px}
+.pcard{background:linear-gradient(180deg,rgba(26,33,46,.95),rgba(13,17,24,.95)); border:1px solid #3d4757; border-top:4px solid #888;
+  border-radius:5px; padding:13px 10px; cursor:pointer; text-align:center}
+.pcard:hover{transform:translateY(-3px); border-color:var(--gold2)}
+.pcard .crown{font-size:27px}
+.pcard b{display:block; color:#fff; font-size:15.5px; margin-top:4px}
+.pcard .house{font-size:11px; letter-spacing:2px; color:#9b8f6e; text-transform:uppercase}
+.pcard .trait{font-size:12px; color:#cfc4a2; margin-top:6px; line-height:1.4; min-height:34px}
+.pcard .bonus{font-size:11.5px; color:var(--gold2)}
+#start .foot{font-size:12px; color:#8a8065}
+.kbd{background:#222; border:1px solid #555; border-bottom-width:2px; padding:0 5px; border-radius:3px; font-size:11px; color:#ddd}
+::-webkit-scrollbar{width:8px} ::-webkit-scrollbar-thumb{background:#3d4757; border-radius:4px}
+.toast{position:fixed; top:64px; left:50%; transform:translateX(-50%); background:var(--panel2); border:1px solid var(--gold);
+  color:#fff; padding:9px 20px; border-radius:4px; z-index:60; font-size:14px; display:none; box-shadow:0 8px 30px #000}
+</style>
 </head>
 <body>
-    <div id="game-container">
-        <!-- Main Game Interface -->
-        <div id="main-interface" class="hidden">
-            <!-- Header -->
-            <header class="game-header">
-                <div class="header-left">
-                    <h1>⚔ THE SIX CROWNS ⚔</h1>
-                    <div class="game-status">
-                        <span id="current-year">Year 1</span>
-                        <span id="current-season">Spring</span>
-                    </div>
-                </div>
-                <div class="header-right">
-                    <button id="btn-generate-asset" class="btn btn-info">✨ GENERATE ASSET</button>
-                    <button id="btn-save-game" class="btn btn-primary">💾 Save</button>
-                    <button id="btn-load-game" class="btn btn-secondary">📂 Load</button>
-                    <button id="btn-reset-game" class="btn btn-danger">🔄 Reset</button>
-                </div>
-            </header>
+<canvas id="map"></canvas>
 
-            <!-- Main Content Area -->
-            <div class="game-content">
-                <!-- Left Sidebar: Kingdom Info -->
-                <aside class="left-sidebar">
-                    <div class="sidebar-section">
-                        <h2>YOUR KINGDOM</h2>
-                        <div id="player-info" class="kingdom-info"></div>
-                    </div>
+<div id="topbar">
+  <div class="title">THE SIX PRINCES<small>THE CHESAPEAKE &middot; c. 1612</small></div>
+  <div class="yields" id="yields"></div>
+  <button class="tbtn" id="btn-tech">TECHNOLOGY</button>
+  <button class="tbtn" id="btn-chron">CHRONICLE</button>
+  <button class="tbtn" id="btn-save">SAVE</button>
+  <button class="tbtn" id="btn-load">LOAD</button>
+  <button class="tbtn" id="btn-menu">NEW GAME</button>
+  <div id="turnbox"><div id="turnlbl">Turn 1</div><div id="seasonlbl">Spring &middot; Year 1</div></div>
+</div>
 
-                    <div class="sidebar-section">
-                        <h2>RESOURCES</h2>
-                        <div id="resources-info" class="resources-info"></div>
-                    </div>
+<div id="techbar"><div class="th">RESEARCHING</div><div class="tn" id="techname">—</div>
+  <div class="pbar"><div id="techfill" style="width:0%"></div></div><div class="tp" id="techprog"></div></div>
 
-                    <div class="sidebar-section">
-                        <h2>MILITARY</h2>
-                        <div id="military-info" class="military-info"></div>
-                    </div>
-                </aside>
+<div id="roster"><h3>THE SIX PRINCES</h3><div id="princes"></div><canvas id="minimap" width="392" height="236"></canvas></div>
 
-                <!-- Center: Map and Tabs -->
-                <main class="center-content">
-                    <!-- Tab Navigation -->
-                    <div class="tab-navigation">
-                        <button class="tab-btn active" data-tab="map">🗺 MAP</button>
-                        <button class="tab-btn" data-tab="court">👑 COURT</button>
-                        <button class="tab-btn" data-tab="military">⚔ MILITARY</button>
-                        <button class="tab-btn" data-tab="diplomacy">🤝 DIPLOMACY</button>
-                        <button class="tab-btn" data-tab="economy">💰 ECONOMY</button>
-                        <button class="tab-btn" data-tab="intelligence">🕵 INTELLIGENCE</button>
-                        <button class="tab-btn" data-tab="chronicle">📜 CHRONICLE</button>
-                    </div>
+<div id="selpanel"></div>
+<div id="chron"><h3>CHRONICLE</h3><div id="chronlist"></div></div>
+<div id="hintbar">Drag to pan &middot; Scroll to zoom &middot; Click a unit or city &middot; <span class="kbd">Enter</span> end turn</div>
+<button id="endturn">END TURN<small id="endturnsub">all orders given</small></button>
+<div class="toast" id="toast"></div>
 
-                    <!-- Tab Content -->
-                    <div class="tab-content">
-                        <!-- MAP TAB -->
-                        <div class="tab-panel active" id="map-tab">
-                            <canvas id="game-map" width="1000" height="600"></canvas>
-                            <div id="map-legend" class="map-legend"></div>
-                        </div>
+<div class="modal" id="techmodal"><div class="mbox">
+  <button class="tbtn mclose" data-close="techmodal">CLOSE</button>
+  <h2>TECHNOLOGY</h2><div class="msub">Knowledge is the seventh crown. Choose what your scholars pursue.</div>
+  <div class="techgrid" id="techgrid"></div>
+</div></div>
 
-                        <!-- COURT TAB -->
-                        <div class="tab-panel" id="court-tab">
-                            <div id="court-content"></div>
-                        </div>
+<div class="modal" id="dipmodal"><div class="mbox" style="width:min(560px,94vw)">
+  <button class="tbtn mclose" data-close="dipmodal">CLOSE</button>
+  <h2 id="dipname">—</h2><div class="msub" id="dipsub"></div>
+  <div id="dipbody"></div>
+</div></div>
 
-                        <!-- MILITARY TAB -->
-                        <div class="tab-panel" id="military-tab">
-                            <div id="military-content"></div>
-                        </div>
+<div id="start"><div class="box">
+  <h1>THE SIX PRINCES</h1>
+  <div class="tag">A Civilization of the Chesapeake</div>
+  <p class="lore">Six princes. One bay. The year is 1612 and the waters of the Chesapeake run between six young crowns — each with a capital, a banner, and a claim. Found cities on her shores, raise hosts, master the arts of war and learning, and write your house into the chronicle. Take every rival capital, and the bay is yours.</p>
+  <div style="letter-spacing:3px; color:var(--gold2); font-size:12px">CHOOSE YOUR PRINCE</div>
+  <div class="pick" id="pick"></div>
+  <div class="foot">Full turn-based grand strategy &middot; 704-tile living map &middot; 5 AI princes who expand, scheme and make war &middot; Domination or highest score at Turn 150</div>
+</div></div>
 
-                        <!-- DIPLOMACY TAB -->
-                        <div class="tab-panel" id="diplomacy-tab">
-                            <div id="diplomacy-content"></div>
-                        </div>
+<script>
+'use strict';
+/* =====================================================================
+   THE SIX PRINCES — AAA-density overhaul of The Six Crowns (Claude artifact
+   'The Six Princes' / github lucianbrn/the-six-crowns, an incomplete shell:
+   index.html only, missing game.js/style.css). Rebuilt as a complete
+   Civ-style hex grand-strategy game on a Chesapeake Bay map.
+   ===================================================================== */
+const W=32,H=22, HEX=34;
+const cv=document.getElementById('map'), ctx=cv.getContext('2d');
+const mm=document.getElementById('minimap'), mmx=mm.getContext('2d');
+let DPR=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1); cv.width=innerWidth*DPR; cv.height=innerHeight*DPR; cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';}
+addEventListener('resize',resize); resize();
 
-                        <!-- ECONOMY TAB -->
-                        <div class="tab-panel" id="economy-tab">
-                            <div id="economy-content"></div>
-                        </div>
+/* seeded rng so terrain texture is stable per tile */
+function srand(seed){let t=seed>>>0; return ()=>{t+=0x6D2B79F5; let r=Math.imul(t^t>>>15,1|t); r^=r+Math.imul(r^r>>>7,61|r); return ((r^r>>>14)>>>0)/4294967296;}}
+const R=srand(1612);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const dist2=(a,b)=>Math.abs(a.q-b.q)+Math.abs(a.r-b.r);
 
-                        <!-- INTELLIGENCE TAB -->
-                        <div class="tab-panel" id="intelligence-tab">
-                            <div id="intelligence-content"></div>
-                        </div>
+/* ---------------- PRINCES ---------------- */
+const PRINCES=[
+ {name:'Aldric', house:'House Maren', title:'Prince of the Western Shore', color:'#3f6fb5', dark:'#24466f', trait:'Seafarer — harbors and galleys thrive under the Maren banner.', bonus:'+1 Gold from water tiles'},
+ {name:'Baldwin', house:'House Ferro', title:'Prince of the Iron Hills', color:'#b5443c', dark:'#6f2824', trait:'Ironborn — soldiers of Ferro are forged, not raised.', bonus:'+15% unit strength'},
+ {name:'Cassian', house:'House Aurelian', title:'Prince of the Golden Fields', color:'#c9a227', dark:'#7d6410', trait:'Golden Fields — Aurelian granaries never empty.', bonus:'+1 Food from farms & plains'},
+ {name:'Dmitri', house:'House Volkov', title:'Prince of the Northern Pines', color:'#4d7c4d', dark:'#2c4d2c', trait:'Pine Lord — Volkov thrives where the forest is thickest.', bonus:'+1 Production from forests'},
+ {name:'Edmund', house:'House Corvin', title:'Prince of the Salt Marsh', color:'#7a4d8f', dark:'#4a2c59', trait:'Marsh Prince — Corvin knows every hidden channel of the bay.', bonus:'Units ignore marsh movement cost'},
+ {name:'Falk', house:'House Sturm', title:'Prince of the Storm Coast', color:'#4d8f8a', dark:'#2c5754', trait:'Storm Coast — Sturm ships and riders strike like weather.', bonus:'+1 movement for all units'},
+];
+const CITY_NAMES={
+ 0:['Bayhaven','Port Taren','Westmere','Calder Bay','Saltwick','Norhaven','Emberport','Kestrel Landing'],
+ 1:['Ironhold','Ferrum','Anvil Rock','Cindervale','Hammerfall','Ostmark','Smelter’s Rest','Grimforge'],
+ 2:['Goldfield','Aurelia','Sunmere','Harveston','Kingsgrain','Velden','Amber Court','Solhaven'],
+ 3:['Pinehold','Volkhov','Nordwald','Frostmere','Timberfall','Ulvang','Winter Court','Bjornstead'],
+ 4:['Marshcourt','Corvin’s Rest','Reedhaven','Saltmarsh','Duskport','Fenwick','Lowater','Gloomere'],
+ 5:['Stormhaven','Sturmfels','Galeport','Thunder Bay','Windmere','Kestrel Rock','Tempest Court','Seawatch'],
+};
+const CAPITALS=[0,1,2,3,4,5].map(i=>CITY_NAMES[i][0]);
 
-                        <!-- CHRONICLE TAB -->
-                        <div class="tab-panel" id="chronicle-tab">
-                            <div id="chronicle-content" class="chronicle-scroll"></div>
-                        </div>
-                    </div>
-                </main>
+/* ---------------- TECH ---------------- */
+const TECHS=[
+ {id:'pottery', name:'Pottery', cost:25, req:[], desc:'Unlocks Granary. Storage is civilization.'},
+ {id:'husbandry', name:'Animal Husbandry', cost:30, req:[], desc:'Reveal Horses. +1 Food from pastures.'},
+ {id:'mining', name:'Mining', cost:30, req:[], desc:'Builders may raise Mines on hills.'},
+ {id:'sailing', name:'Sailing', cost:35, req:[], desc:'Unlocks Galley and Harbor.'},
+ {id:'archery', name:'Archery', cost:40, req:[], desc:'Unlocks Archer.'},
+ {id:'writing', name:'Writing', cost:55, req:['pottery'], desc:'Unlocks Library. The chronicle begins.'},
+ {id:'masonry', name:'Masonry', cost:60, req:['mining'], desc:'Unlocks Walls. Stone outlives princes.'},
+ {id:'bronze', name:'Bronze Working', cost:65, req:['mining'], desc:'Unlocks Spearman. +10% melee strength.'},
+ {id:'wheel', name:'The Wheel', cost:70, req:['husbandry'], desc:'All land units +1 movement on open ground roads.'},
+ {id:'horseback', name:'Horseback Riding', cost:95, req:['husbandry'], desc:'Unlocks Cavalry — the terror of the plain.'},
+ {id:'iron', name:'Iron Working', cost:110, req:['bronze'], desc:'Unlocks Swordsman, a heavy line-breaker.'},
+ {id:'engineering', name:'Engineering', cost:130, req:['masonry','wheel'], desc:'Unlocks Catapult. Walls learn fear.'},
+ {id:'astronomy', name:'Astronomy', cost:160, req:['writing','sailing'], desc:'+1 Science per city. Galleys +1 movement.'},
+ {id:'gunpowder', name:'Gunpowder', cost:220, req:['iron','engineering'], desc:'Unlocks Bombard — the argument that ends sieges.'},
+];
+const techById=id=>TECHS.find(t=>t.id===id);
 
-                <!-- Right Sidebar: World Info -->
-                <aside class="right-sidebar">
-                    <div class="sidebar-section">
-                        <h2>OTHER RULERS</h2>
-                        <div id="rulers-info" class="rulers-info"></div>
-                    </div>
+/* ---------------- UNITS & BUILDINGS ---------------- */
+const UNITS={
+ settler:{name:'Settler', str:0, rng:0, move:2, cost:60, hp:100, icon:'flag', desc:'Founds a new city.'},
+ builder:{name:'Builder', str:0, rng:0, move:2, cost:40, hp:100, icon:'hammer', charges:3, desc:'Builds farms, mines, lumber camps (3 charges).'},
+ scout:{name:'Scout', str:8, rng:0, move:3, cost:25, hp:100, icon:'eye', desc:'Fast eyes of the crown.'},
+ warrior:{name:'Warrior', str:20, rng:0, move:2, cost:40, hp:100, icon:'sword', desc:'The first argument of kings.'},
+ archer:{name:'Archer', str:15, rstr:22, rng:2, move:2, cost:45, hp:100, icon:'bow', req:'archery', desc:'Strikes from 2 tiles away.'},
+ spearman:{name:'Spearman', str:24, rng:0, move:2, cost:55, hp:100, icon:'spear', req:'bronze', desc:'+50% vs Cavalry.'},
+ swordsman:{name:'Swordsman', str:32, rng:0, move:2, cost:80, hp:100, icon:'sword', req:'iron', desc:'Heavy infantry. Breaks lines.'},
+ cavalry:{name:'Cavalry', str:34, rng:0, move:4, cost:90, hp:100, icon:'horse', req:'horseback', desc:'Fast, devastating on open ground.'},
+ catapult:{name:'Catapult', str:12, rstr:36, rng:2, move:2, cost:95, hp:100, icon:'siege', req:'engineering', desc:'+100% vs cities and walls.'},
+ bombard:{name:'Bombard', str:18, rstr:48, rng:2, move:2, cost:150, hp:100, icon:'siege', req:'gunpowder', desc:'The argument that ends sieges.'},
+ galley:{name:'Galley', str:22, rstr:18, rng:1, move:3, cost:55, hp:100, icon:'ship', req:'sailing', naval:true, desc:'Rules the bay. Water only.'},
+};
+const BUILDINGS={
+ granary:{name:'Granary', cost:45, req:'pottery', desc:'+2 Food in this city.'},
+ library:{name:'Library', cost:60, req:'writing', desc:'+3 Science in this city.'},
+ market:{name:'Market', cost:55, req:null, desc:'+3 Gold in this city.'},
+ barracks:{name:'Barracks', cost:50, req:null, desc:'Units trained here start with +15 HP veterancy.'},
+ harbor:{name:'Harbor', cost:65, req:'sailing', coastal:true, desc:'+2 Gold, +1 Food. City must be coastal.'},
+ temple:{name:'Temple', cost:55, req:null, desc:'+2 Culture in this city.'},
+ walls:{name:'City Walls', cost:70, req:'masonry', desc:'+150 city HP and +8 city strength.'},
+};
 
-                    <div class="sidebar-section">
-                        <h2>RELATIONS</h2>
-                        <div id="relations-info" class="relations-info"></div>
-                    </div>
 
-                    <div class="sidebar-section">
-                        <h2>ALERTS</h2>
-                        <div id="alerts-info" class="alerts-info"></div>
-                    </div>
-                </aside>
-            </div>
+/* ---------------- MAP GENERATION — CHESAPEAKE ---------------- */
+let tiles=[], cities=[], units=[], G=null;
+const key=(q,r)=>q+','+r;
+const tileMap=new Map();
+function tileAt(q,r){return tileMap.get(key(q,r))||null;}
+function hexCorners(cx,cy,s){const p=[]; for(let i=0;i<6;i++){const a=Math.PI/180*(60*i-30); p.push([cx+s*Math.cos(a),cy+s*Math.sin(a)]);} return p;}
+function hexXY(q,r){ const x=HEX*Math.sqrt(3)*(q+0.5*(r&1)); const y=HEX*1.5*r; return [x,y]; }
+function neighbors(t){const d=(t.r&1)?[[1,0],[1,1],[0,1],[-1,1],[-1,0],[0,-1]]:[[1,0],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1]];
+  // note: using odd-r offset coords consistently below via axial conversion instead
+  return axialNeighbors(t);}
+function toAxial(q,r){return {x:q-(r-(r&1))/2, z:r};}
+function fromAxial(x,z){return {q:x+(z-(z&1))/2, r:z};}
+const AXD=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+function axialNeighbors(t){const a=toAxial(t.q,t.r); const out=[]; for(const [dx,dz] of AXD){const p=fromAxial(a.x+dx,a.z+dz); const n=tileAt(p.q,p.r); if(n) out.push(n);} return out;}
+function hexDist(a,b){const A=toAxial(a.q,a.r),B=toAxial(b.q,b.r); return (Math.abs(A.x-B.x)+Math.abs(A.z-B.z)+Math.abs((A.x+A.z)-(B.x+B.z)))/2;}
+function tilesWithin(t,rad){const out=[]; for(const o of tiles) if(hexDist(t,o)<=rad) out.push(o); return out;}
 
-            <!-- Bottom: Actions -->
-            <div class="action-bar">
-                <div class="action-section">
-                    <h3>ISSUE ORDERS</h3>
-                    <div id="action-buttons" class="action-grid"></div>
-                </div>
-            </div>
+function noise(x,y){return Math.sin(x*0.55+Math.sin(y*0.7)*1.7)*0.5+Math.cos(y*0.45+Math.sin(x*0.5)*1.3)*0.5;}
 
-            <!-- Bottom Right: Turn Control -->
-            <div class="turn-control">
-                <button id="btn-next-turn" class="btn btn-large btn-success">➤ NEXT TURN</button>
-            </div>
-        </div>
+function genMap(){
+  tiles=[]; tileMap.clear();
+  for(let r=0;r<H;r++) for(let q=0;q<W;q++){
+    const t={q,r,terrain:'plains',feature:null,resource:null,improve:null,owner:-1,city:null,unit:null,elev:0,moist:0};
+    tiles.push(t); tileMap.set(key(q,r),t);
+  }
+  for(const t of tiles){
+    /* The Bay: a winding north-south water spine around q=20, plus tributaries */
+    const spine=20.5+Math.sin(t.r*0.42)*2.2+Math.sin(t.r*0.15)*1.2;
+    const dBay=Math.abs(t.q-spine);
+    const trib=(t.r===5&&t.q<14)||(t.r===11&&t.q<12)||(t.r===16&&t.q>10&&t.q<spine);
+    const trib2=(t.r===8&&t.q>spine&&t.q<29)||(t.r===18&&t.q>spine);
+    let water = dBay<1.6 || trib || trib2;
+    if(t.r<2 && t.q>24) water=true;
+    t.elev=noise(t.q*0.8,t.r*0.8)*0.5+noise(t.q*0.23,t.r*0.31)*0.5+R()*0.18;
+    t.moist=noise(t.q*0.6+40,t.r*0.6-17)*0.5+0.5;
+    if(water){ t.terrain = dBay<0.8?'deepwater':'bay'; if(trib||trib2) t.terrain='bay'; }
+    else{
+      const nearWater=axialNeighbors(t).some(n=>n.terrain==='bay'||n.terrain==='deepwater')||dBay<2.6;
+      if(t.elev>0.52) t.terrain='mountain';
+      else if(t.elev>0.30) t.terrain='hills';
+      else if(nearWater && t.moist>0.52 && t.elev<0.02) t.terrain='marsh';
+      else if(t.moist>0.18 && t.elev>-0.15) t.terrain='grass';
+      else t.terrain='plains';
+      if(t.terrain==='grass'&&t.moist>0.62) t.feature='forest';
+      if(t.terrain==='plains'&&t.moist>0.55) t.feature='forest';
+      if(t.terrain==='hills'&&t.moist>0.45) t.feature='forest';
+    }
+  }
+  /* resources — Chesapeake flavor */
+  for(const t of tiles){
+    const roll=R();
+    if(t.terrain==='bay'&&roll<0.16) t.resource='crabs';
+    else if(t.terrain==='deepwater'&&roll<0.12) t.resource='fish';
+    else if(t.terrain==='bay'&&roll>0.92) t.resource='oysters';
+    else if(t.terrain==='plains'&&roll<0.10) t.resource='horses';
+    else if(t.terrain==='grass'&&roll<0.10) t.resource='wheat';
+    else if(t.feature==='forest'&&roll<0.12) t.resource='deer';
+    else if(t.terrain==='hills'&&roll<0.13) t.resource='iron';
+    else if(t.terrain==='marsh'&&roll<0.10) t.resource='salt';
+  }
+}
+function yieldsOf(t, civIdx){
+  let y={food:0,prod:0,gold:0,sci:0,cul:0};
+  switch(t.terrain){
+    case 'bay': y={food:2,prod:0,gold:1,sci:0,cul:0}; break;
+    case 'deepwater': y={food:1,prod:0,gold:1,sci:0,cul:0}; break;
+    case 'plains': y={food:1,prod:1,gold:0,sci:0,cul:0}; break;
+    case 'grass': y={food:2,prod:0,gold:0,sci:0,cul:0}; break;
+    case 'hills': y={food:0,prod:2,gold:0,sci:0,cul:0}; break;
+    case 'marsh': y={food:1,prod:0,gold:1,sci:0,cul:0}; break;
+    case 'mountain': y={food:0,prod:1,gold:0,sci:0,cul:1}; break;
+  }
+  if(t.feature==='forest'){y.prod+=1; y.food=Math.max(0,y.food- (t.terrain==='grass'?1:0));}
+  if(t.resource==='wheat') y.food+=1;
+  if(t.resource==='horses') y.prod+=1;
+  if(t.resource==='deer') y.food+=1;
+  if(t.resource==='iron') y.prod+=1;
+  if(t.resource==='crabs') y.gold+=2;
+  if(t.resource==='oysters') y.gold+=1;
+  if(t.resource==='fish') y.food+=1;
+  if(t.resource==='salt') y.gold+=1;
+  if(t.improve==='farm'){y.food+=2;}
+  if(t.improve==='mine'){y.prod+=2;}
+  if(t.improve==='lumber'){y.prod+=1;}
+  if(civIdx===0 && (t.terrain==='bay'||t.terrain==='deepwater')) y.gold+=1; /* Maren */
+  if(civIdx===2 && (t.improve==='farm'||t.terrain==='plains')) y.food+= (t.improve==='farm'||t.resource==='wheat')?1:0; /* Aurelian simplified */
+  if(civIdx===3 && t.feature==='forest') y.prod+=1; /* Volkov */
+  return y;
+}
+const TERRAIN_NAME={bay:'Bay Water',deepwater:'Open Water',plains:'Plains',grass:'Grassland',hills:'Hills',marsh:'Salt Marsh',mountain:'Mountains'};
+const RES_NAME={crabs:'Blue Crabs',fish:'Fish',oysters:'Oysters',horses:'Horses',wheat:'Wheat',deer:'Deer',iron:'Iron',salt:'Salt'};
 
-        <!-- Start Screen -->
-        <div id="start-screen" class="start-screen">
-            <div class="start-content">
-                <h1>⚔ THE SIX CROWNS ⚔</h1>
-                <p class="subtitle">A Medieval Political Strategy Simulation</p>
-                
-                <div class="start-buttons">
-                    <button id="btn-new-game" class="btn btn-large btn-success">NEW GAME</button>
-                    <button id="btn-continue-game" class="btn btn-large btn-primary">CONTINUE</button>
-                </div>
+/* ---------------- GAME STATE ---------------- */
+let nextId=1;
+function newGame(playerIdx){
+  genMap(); cities=[]; units=[]; nextId=1;
+  G={turn:1, player:playerIdx, gold:[0,0,0,0,0,0].map(()=>120), sci:[0,0,0,0,0,0].map(()=>0),
+     culture:[0,0,0,0,0,0].map(()=>0), techs:PRINCES.map(()=>new Set()), researching:PRINCES.map(()=>null),
+     atWar:PRINCES.map(()=>PRINCES.map(()=>false)), relations:PRINCES.map(()=>PRINCES.map((_,j)=>0)),
+     alive:PRINCES.map(()=>true), chron:[], over:false, winner:-1, cityNameIdx:PRINCES.map(()=>1),
+     difficulty:'Prince'};
+  for(let i=0;i<6;i++) for(let j=0;j<6;j++) if(i!==j) G.relations[i][j]= 20+Math.floor(R()*25);
+  /* capital sites: spread across the map, land, spaced */
+  const sites=[[5,4],[6,16],[13,7],[12,18],[26,5],[27,16]];
+  const order=[3,1,4,0,5,2]; /* assign sites to princes in a scattered order */
+  const princeSite={}; order.forEach((p,k)=>princeSite[p]=sites[k]);
+  for(let p=0;p<6;p++){
+    let [sq,sr]=princeSite[p];
+    let t=tileAt(sq,sr); let guard=0;
+    while((!t||t.terrain==='bay'||t.terrain==='deepwater'||t.terrain==='mountain')&&guard++<300){
+      sq=clamp(sq+Math.floor(R()*5)-2,1,W-2); sr=clamp(sr+Math.floor(R()*5)-2,1,H-2); t=tileAt(sq,sr);
+    }
+    const c=foundCity(p,t,CITY_NAMES[p][0],true);
+    spawnUnit(p,'warrior',t);
+    const n=axialNeighbors(t).find(n=>isLand(n)&&!n.unit) || t;
+    spawnUnit(p,'settler',n);
+    const n2=axialNeighbors(t).find(x=>isLand(x)&&!x.unit&&x!==n) ;
+    if(n2) spawnUnit(p,'scout',n2);
+  }
+  G.researching=PRINCES.map(()=>'pottery');
+  log(`The chronicle opens. Six princes raise their banners over the Chesapeake.`,'major');
+  log(`You rule as Prince ${PRINCES[playerIdx].name} of ${PRINCES[playerIdx].house}.`,'good');
+  centerOn(cities.find(c=>c.civ===playerIdx));
+  updateUI();
+}
+function isLand(t){return t && t.terrain!=='bay' && t.terrain!=='deepwater';}
+function isWater(t){return t && (t.terrain==='bay'||t.terrain==='deepwater');}
+function foundCity(civ,t,name,isCapital){
+  const c={id:nextId++, civ, tile:t, name, pop:2, hp:200, maxhp:200, buildings:new Set(), queue:[], prodStock:0,
+           foodStock:0, capital:!!isCapital, nameIdx:0};
+  t.city=c; cities.push(c);
+  for(const o of tilesWithin(t,2)){ if(o.city===null||hexDist(t,o)<=1){ if(!o.city||o.city===c){} } }
+  claimTerritory(c);
+  return c;
+}
+function claimTerritory(c){
+  for(const o of tilesWithin(c.tile,2)){
+    if(o.owner===-1 || (o.city&&o.city.civ===c.civ)) { if(hexDist(c.tile,o)<=1||o.owner===-1) o.owner=c.civ; }
+    if(hexDist(c.tile,o)<=1) o.owner=c.civ;
+  }
+}
+function spawnUnit(civ,type,t){
+  if(!t) return null;
+  if(t.unit){ const alt=axialNeighbors(t).find(n=>passable(n,type)&&!n.unit); if(alt) t=alt; else if(!t.unit) {} else return null; }
+  const u={id:nextId++, civ, type, tile:t, hp:UNITS[type].hp, moveLeft:UNITS[type].move, xp:0, charges:UNITS[type].charges||0, fortified:false};
+  t.unit=u; units.push(u); return u;
+}
+function passable(t,type){
+  if(!t) return false;
+  const naval=UNITS[type].naval;
+  if(naval) return isWater(t);
+  if(isWater(t)) return false;
+  if(t.terrain==='mountain') return type==='scout';
+  return true;
+}
+function moveCost(from,to,type,civ){
+  if(!passable(to,type)) return 99;
+  if(UNITS[type].naval) return 1;
+  if(to.feature==='forest'||to.terrain==='hills') return 2;
+  if(to.terrain==='marsh') return civ===4?1:2;
+  return 1;
+}
+function log(msg,cls){ if(!G) return; G.chron.unshift({turn:G.turn,msg,cls:cls||''}); if(G.chron.length>120)G.chron.pop(); renderChron(); }
+function renderChron(){ const el=document.getElementById('chronlist'); if(el&&G) el.innerHTML=G.chron.slice(0,26).map(c=>`<div class="${c.cls}">T${c.turn} — ${c.msg}</div>`).join(''); }
+function toast(msg){const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',2600);}
 
-                <div class="start-info">
-                    <h2>About the Game</h2>
-                    <p>Rule one of six kingdoms in the Chesapeake region. Navigate political intrigue, manage armies, trade, spy, and build alliances. The other five rulers make their own decisions—the world continues with or without you.</p>
-                    <p><strong>Choose your orders wisely.</strong> Each action has consequences.</p>
-                    <p><strong>Generate Assets:</strong> Press the ✨ button during gameplay to create AI image prompts for portraits, maps, items, and rewards.</p>
-                </div>
-            </div>
-        </div>
+/* ---------------- CAMERA & RENDER ---------------- */
+let cam={x:0,y:0,zoom:1}, selected=null, reachable=new Map(), attackable=new Set();
+function centerOn(cityOrTile){ const t=cityOrTile.tile||cityOrTile; const [x,y]=hexXY(t.q,t.r); cam.x=innerWidth/2-x*cam.zoom; cam.y=innerHeight/2-y*cam.zoom; }
+function screenToTile(mx,my){
+  const wx=(mx-cam.x)/cam.zoom, wy=(my-cam.y)/cam.zoom;
+  let best=null,bd=1e9;
+  for(const t of tiles){ const [x,y]=hexXY(t.q,t.r); const d=(x-wx)*(x-wx)+(y-wy)*(y-wy); if(d<bd){bd=d;best=t;} }
+  return bd<(HEX*1.05)*(HEX*1.05)?best:null;
+}
+const TERRAIN_FILL={
+  bay:['#2e6b8f','#1d4e6b'], deepwater:['#173f63','#0f2c49'], plains:['#b39b57','#967f42'],
+  grass:['#6f9a4e','#527a37'], hills:['#8f855f','#6f6747'], marsh:['#5d7a5e','#42594a'], mountain:['#8b8d94','#62646b'],
+};
+function draw(){
+  requestAnimationFrame(draw);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle='#08131d'; ctx.fillRect(0,0,innerWidth,innerHeight);
+  if(!G) return;
+  ctx.save(); ctx.translate(cam.x,cam.y); ctx.scale(cam.zoom,cam.zoom);
+  const time=performance.now()/1000;
+  /* tiles */
+  for(const t of tiles){
+    const [x,y]=hexXY(t.q,t.r); if(x*cam.zoom+cam.x<-70||y*cam.zoom+cam.y<-70||x*cam.zoom+cam.x>innerWidth+70||y*cam.zoom+cam.y>innerHeight+70) continue;
+    const pts=hexCorners(x,y,HEX-1.2);
+    const [c1,c2]=TERRAIN_FILL[t.terrain];
+    const g=ctx.createLinearGradient(x,y-HEX,x,y+HEX); g.addColorStop(0,c1); g.addColorStop(1,c2);
+    ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath();
+    ctx.fillStyle=g; ctx.fill();
+    /* territory tint */
+    if(t.owner>=0 && G.alive[t.owner]){ ctx.fillStyle=PRINCES[t.owner].color+'2e'; ctx.fill(); }
+    ctx.strokeStyle='rgba(0,0,0,.28)'; ctx.lineWidth=1; ctx.stroke();
+    /* deterministic speckle texture — density */
+    const sr=srand(t.q*7919+t.r*104729);
+    ctx.save(); ctx.clip();
+    if(isLand(t)){ for(let i=0;i<7;i++){ ctx.fillStyle=`rgba(${sr()>0.5?255:0},${sr()>0.5?240:20},200,${0.03+sr()*0.05})`; const sx=x+(sr()-0.5)*HEX*1.2, sy=y+(sr()-0.5)*HEX*1.2; ctx.beginPath(); ctx.arc(sx,sy,1+sr()*2.4,0,7); ctx.fill(); } }
+    if(isWater(t)){ ctx.strokeStyle=`rgba(190,225,255,${0.10+0.08*Math.sin(time*1.3+t.q*0.7+t.r)})`; ctx.lineWidth=1.2;
+      for(let i=0;i<2;i++){ const wy=y-8+i*13+Math.sin(time+t.q)*1.5; ctx.beginPath(); ctx.moveTo(x-14,wy); ctx.quadraticCurveTo(x,wy-3.5,x+14,wy); ctx.stroke(); } }
+    /* features */
+    if(t.feature==='forest') drawForest(x,y,sr);
+    if(t.terrain==='hills') drawHills(x,y,sr);
+    if(t.terrain==='mountain') drawMountain(x,y,sr);
+    if(t.terrain==='marsh') drawMarsh(x,y,sr,time);
+    if(t.improve==='farm') drawFarm(x,y,sr);
+    if(t.improve==='mine') drawMine(x,y);
+    if(t.improve==='lumber') drawLumber(x,y);
+    if(t.resource) drawResource(x,y,t.resource,sr,time);
+    ctx.restore();
+    /* reachable / attack highlights */
+    if(reachable.has(t)){ ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath(); ctx.fillStyle='rgba(120,200,255,.30)'; ctx.fill(); ctx.strokeStyle='rgba(160,220,255,.8)'; ctx.stroke(); }
+    if(attackable.has(t)){ ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath(); ctx.strokeStyle='rgba(255,80,70,.95)'; ctx.lineWidth=2.5; ctx.stroke(); }
+    if(selected && selected.tile===t){ ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath(); ctx.strokeStyle='#ffe98a'; ctx.lineWidth=3; ctx.stroke(); }
+  }
+  /* cities then units */
+  for(const c of cities) drawCity(c,time);
+  for(const u of units) if(!u.tile.city || u.tile.city) drawUnit(u,time);
+  ctx.restore();
+  drawMinimap();
+}
+function drawForest(x,y,sr){ for(let i=0;i<7;i++){ const ox=(sr()-0.5)*36, oy=(sr()-0.5)*30+4, s=6+sr()*5;
+  ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(x+ox+2,y+oy+4,s*0.7,2.4,0,0,7); ctx.fill();
+  ctx.fillStyle='#5d4020'; ctx.fillRect(x+ox-1,y+oy+1,2,4);
+  ctx.fillStyle=sr()>0.5?'#2e5426':'#38632e'; ctx.beginPath(); ctx.moveTo(x+ox,y+oy-s); ctx.lineTo(x+ox-s*0.62,y+oy+2); ctx.lineTo(x+ox+s*0.62,y+oy+2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.10)'; ctx.beginPath(); ctx.moveTo(x+ox,y+oy-s); ctx.lineTo(x+ox,y+oy+1); ctx.lineTo(x+ox+s*0.3,y+oy+1); ctx.closePath(); ctx.fill(); } }
+function drawHills(x,y,sr){ ctx.strokeStyle='rgba(52,44,26,.65)'; ctx.lineWidth=2; for(let i=0;i<3;i++){ const ox=(sr()-0.5)*30, oy=(sr()-0.5)*24; ctx.beginPath(); ctx.arc(x+ox,y+oy+5,7+sr()*4,Math.PI*1.08,Math.PI*1.92); ctx.stroke(); } }
+function drawMountain(x,y,sr){ for(let i=0;i<2;i++){ const ox=i?10:-9, oy=i?5:-3, s=i?13:19;
+  ctx.fillStyle='#565861'; ctx.beginPath(); ctx.moveTo(x+ox,y+oy-s); ctx.lineTo(x+ox-s,y+oy+s*0.75); ctx.lineTo(x+ox+s,y+oy+s*0.75); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#e8ecf2'; ctx.beginPath(); ctx.moveTo(x+ox,y+oy-s); ctx.lineTo(x+ox-s*0.34,y+oy-s*0.28); ctx.lineTo(x+ox+s*0.34,y+oy-s*0.28); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.25)'; ctx.beginPath(); ctx.moveTo(x+ox,y+oy-s); ctx.lineTo(x+ox,y+oy+s*0.75); ctx.lineTo(x+ox+s,y+oy+s*0.75); ctx.closePath(); ctx.fill(); } }
+function drawMarsh(x,y,sr,time){ ctx.strokeStyle='rgba(214,230,190,.5)'; ctx.lineWidth=1.4; for(let i=0;i<6;i++){ const ox=(sr()-0.5)*38, oy=(sr()-0.5)*28; const sway=Math.sin(time*1.6+ox)*1.4; ctx.beginPath(); ctx.moveTo(x+ox,y+oy+6); ctx.quadraticCurveTo(x+ox+sway,y+oy-2,x+ox+sway*1.6,y+oy-7-sr()*4); ctx.stroke(); } }
+function drawFarm(x,y,sr){ ctx.save(); ctx.translate(x,y); ctx.rotate(0.0); for(let i=-2;i<3;i++){ ctx.fillStyle=i%2?'rgba(214,178,84,.85)':'rgba(178,142,58,.85)'; ctx.fillRect(-17,i*6.4-2.4,34,4.6);} ctx.fillStyle='#7a4a26'; ctx.fillRect(8,-11,9,7); ctx.fillStyle='#a33327'; ctx.beginPath(); ctx.moveTo(7,-11); ctx.lineTo(12.5,-16); ctx.lineTo(18,-11); ctx.closePath(); ctx.fill(); ctx.restore(); }
+function drawMine(x,y){ ctx.fillStyle='#3c3f45'; ctx.fillRect(x-11,y-3,22,11); ctx.fillStyle='#191b1e'; ctx.beginPath(); ctx.arc(x,y+8,7,Math.PI,0); ctx.fill(); ctx.strokeStyle='#c9a227'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(x+9,y-10); ctx.lineTo(x+15,y+1); ctx.moveTo(x+15,y-10); ctx.lineTo(x+9,y+1); ctx.stroke(); }
+function drawLumber(x,y){ ctx.fillStyle='#6b4a2a'; for(let i=0;i<3;i++){ ctx.save(); ctx.translate(x-8+i*8,y+4-(i%2)*4); ctx.rotate(0.5); ctx.fillRect(-7,-2,14,4); ctx.restore(); } ctx.strokeStyle='#8a6a3a'; ctx.beginPath(); ctx.moveTo(x+10,y-10); ctx.lineTo(x+4,y+4); ctx.lineTo(x+16,y+4); ctx.stroke(); }
+const RES_DRAW={wheat:'#e5c95e',horses:'#8a5a30',deer:'#9a6a42',iron:'#b9c2cc',crabs:'#d1603a',fish:'#9fd0e8',oysters:'#e6e0d2',salt:'#ffffff'};
+function drawResource(x,y,res,sr,time){ const c=RES_DRAW[res]; ctx.save(); ctx.translate(x+13,y-14+Math.sin(time*2+x)*0.7);
+  ctx.fillStyle='rgba(10,10,10,.55)'; ctx.beginPath(); ctx.arc(0,0,7.2,0,7); ctx.fill(); ctx.strokeStyle='#e8c766'; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle=c; if(res==='wheat'){ for(let i=-1;i<2;i++){ ctx.fillRect(i*3-0.8,-4,1.6,8);} } else if(res==='iron'){ ctx.fillRect(-3.4,-3.4,6.8,6.8); }
+  else if(res==='crabs'||res==='fish'){ ctx.beginPath(); ctx.ellipse(0,0,4.6,2.8,0,0,7); ctx.fill(); ctx.beginPath(); ctx.moveTo(4,0); ctx.lineTo(7,-3); ctx.lineTo(7,3); ctx.closePath(); ctx.fill(); }
+  else { ctx.beginPath(); ctx.arc(0,0,3.6,0,7); ctx.fill(); } ctx.restore(); }
+function drawCity(c,time){
+  const [x,y]=hexXY(c.tile.q,c.tile.r); const P=PRINCES[c.civ];
+  const n=Math.min(11,2+c.pop+Math.floor(c.buildings.size*1.2));
+  const sr=srand(c.id*331);
+  /* sprawl ground */
+  ctx.fillStyle='rgba(216,196,150,.20)'; ctx.beginPath(); ctx.ellipse(x,y+7,26+Math.min(14,c.pop),15+Math.min(7,c.pop*0.6),0,0,7); ctx.fill();
+  for(let i=0;i<n;i++){
+    const a=sr()*Math.PI*2, d=i===0?0:8+sr()*17, bx=x+Math.cos(a)*d, by=y+Math.sin(a)*d*0.55+2, s=i===0?1.25:0.72+sr()*0.4;
+    ctx.fillStyle='rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(bx+2,by+7*s,8*s,3*s,0,0,7); ctx.fill();
+    ctx.fillStyle=i===0?'#cfc4ab':'#b8ab8d'; ctx.fillRect(bx-6*s,by-3*s,12*s,10*s);
+    ctx.fillStyle=P.dark; ctx.beginPath(); ctx.moveTo(bx-7.5*s,by-3*s); ctx.lineTo(bx,by-9.5*s); ctx.lineTo(bx+7.5*s,by-3*s); ctx.closePath(); ctx.fill();
+    if(i===0){ ctx.fillStyle='#8f8a7c'; ctx.fillRect(bx-4,by-16,8,14); ctx.fillStyle=P.color; ctx.fillRect(bx-4,by-16,8,4);
+      ctx.strokeStyle='#e8c766'; ctx.beginPath(); ctx.moveTo(bx+4,by-16); ctx.lineTo(bx+4,by-24); ctx.stroke();
+      ctx.fillStyle=P.color; ctx.beginPath(); ctx.moveTo(bx+4,by-24); ctx.lineTo(bx+11,by-21.5); ctx.lineTo(bx+4,by-19); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle='rgba(255,214,120,.9)'; ctx.fillRect(bx-1.4*s,by+1.6*s,2.8*s,3*s);
+  }
+  if(c.buildings.has('walls')){ ctx.strokeStyle='rgba(210,205,190,.85)'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.ellipse(x,y+4,31,18,0,0,7); ctx.stroke(); }
+  /* name plate */
+  ctx.font='bold 11.5px Georgia'; const tw=ctx.measureText(c.name).width+30;
+  ctx.fillStyle='rgba(8,10,14,.88)'; ctx.strokeStyle=P.color; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.roundRect(x-tw/2,y+20,tw,17,4); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=P.color; ctx.beginPath(); ctx.arc(x-tw/2+10,y+28.5,5.4,0,7); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='bold 8.5px Georgia'; ctx.textAlign='center'; ctx.fillText(c.pop,x-tw/2+10,y+31.5);
+  ctx.fillStyle='#f2ead2'; ctx.font='bold 11.5px Georgia'; ctx.fillText(c.name,x+6,y+32.5); ctx.textAlign='left';
+  /* hp */
+  if(c.hp<c.maxhp){ ctx.fillStyle='#300'; ctx.fillRect(x-20,y+40,40,4); ctx.fillStyle='#c34a4a'; ctx.fillRect(x-20,y+40,40*c.hp/c.maxhp,4); }
+}
+function drawUnit(u,time){
+  const [x,y]=hexXY(u.tile.q,u.tile.r); const P=PRINCES[u.civ];
+  const bob=u.civ===G.player&&u.moveLeft>0?Math.sin(time*3+u.id)*1.1:0;
+  ctx.save(); ctx.translate(x,y-4+bob);
+  ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(1,11,11,4,0,0,7); ctx.fill();
+  if(UNITS[u.type].naval){
+    ctx.fillStyle='#6b4a2a'; ctx.beginPath(); ctx.moveTo(-13,6); ctx.lineTo(13,6); ctx.lineTo(8,12); ctx.lineTo(-8,12); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#d8cfb8'; ctx.beginPath(); ctx.moveTo(0,5); ctx.lineTo(0,-12); ctx.stroke();
+    ctx.fillStyle=P.color; ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(10,-3); ctx.lineTo(0,-3); ctx.closePath(); ctx.fill();
+  } else {
+    /* banner */
+    ctx.strokeStyle='#2b2118'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(-8,8); ctx.lineTo(-8,-13); ctx.stroke();
+    ctx.fillStyle=P.color; ctx.beginPath(); ctx.moveTo(-8,-13); ctx.lineTo(1,-10.4); ctx.lineTo(-8,-8); ctx.closePath(); ctx.fill();
+    /* body by type */
+    ctx.fillStyle=P.color; ctx.strokeStyle='rgba(0,0,0,.5)';
+    const icon=UNITS[u.type].icon;
+    if(icon==='horse'){ ctx.beginPath(); ctx.ellipse(2,3,10,5.4,0,0,7); ctx.fill(); ctx.beginPath(); ctx.arc(11,-2,3.6,0,7); ctx.fill(); ctx.strokeStyle='#2b2118'; ctx.beginPath(); ctx.moveTo(-4,7); ctx.lineTo(-5,12); ctx.moveTo(6,7); ctx.lineTo(7,12); ctx.stroke(); }
+    else if(icon==='siege'){ ctx.strokeStyle='#4a3520'; ctx.lineWidth=2.4; ctx.strokeRect(-9,-4,18,9); ctx.fillStyle='#3c3f45'; ctx.beginPath(); ctx.arc(-6,7,3.4,0,7); ctx.arc(7,7,3.4,0,7); ctx.fill(); ctx.strokeStyle='#8a6a3a'; ctx.beginPath(); ctx.moveTo(-8,-4); ctx.lineTo(11,-11); ctx.stroke(); }
+    else if(icon==='ship'){ }
+    else { ctx.beginPath(); ctx.moveTo(-5,10); ctx.lineTo(-3.4,-3); ctx.quadraticCurveTo(0,-6,3.4,-3); ctx.lineTo(5,10); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#e6c9a0'; ctx.beginPath(); ctx.arc(0,-8,3.5,0,7); ctx.fill();
+      ctx.strokeStyle='#d9d9d9'; ctx.lineWidth=1.7;
+      if(icon==='sword'){ ctx.beginPath(); ctx.moveTo(5,4); ctx.lineTo(11,-6); ctx.stroke(); }
+      if(icon==='bow'){ ctx.beginPath(); ctx.arc(7,0,5.4,-1.2,1.2); ctx.stroke(); }
+      if(icon==='spear'){ ctx.beginPath(); ctx.moveTo(5,8); ctx.lineTo(10,-10); ctx.stroke(); }
+      if(icon==='eye'){ ctx.strokeStyle='#ffe98a'; ctx.beginPath(); ctx.arc(6,-4,3,0,7); ctx.stroke(); }
+      if(icon==='flag'){ ctx.fillStyle='#fff'; ctx.fillRect(3,-8,7,5); }
+      if(icon==='hammer'){ ctx.beginPath(); ctx.moveTo(4,6); ctx.lineTo(10,-4); ctx.stroke(); ctx.fillStyle='#999'; ctx.fillRect(7,-8,6,4); }
+    }
+  }
+  ctx.restore();
+  if(u.hp<UNITS[u.type].hp){ ctx.fillStyle='#300'; ctx.fillRect(x-11,y-24,22,3.6); ctx.fillStyle=u.hp>40?'#7dc47d':'#c34a4a'; ctx.fillRect(x-11,y-24,22*u.hp/100,3.6); }
+  if(selected===u){ ctx.strokeStyle='#ffe98a'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y-3,16+Math.sin(time*4)*1.6,0,7); ctx.stroke(); }
+}
+function drawMinimap(){
+  if(!G) return; const sx=mm.width/W, sy=mm.height/H;
+  mmx.fillStyle='#08131d'; mmx.fillRect(0,0,mm.width,mm.height);
+  for(const t of tiles){ mmx.fillStyle=isWater(t)?'#1d4e6b':(t.terrain==='grass'?'#527a37':t.terrain==='hills'?'#6f6747':t.terrain==='mountain'?'#62646b':t.terrain==='marsh'?'#42594a':'#967f42');
+    mmx.fillRect(t.q*sx,t.r*sy,sx-0.4,sy-0.4); if(t.owner>=0){mmx.fillStyle=PRINCES[t.owner].color+'66'; mmx.fillRect(t.q*sx,t.r*sy,sx-0.4,sy-0.4);} }
+  for(const c of cities){ mmx.fillStyle=PRINCES[c.civ].color; mmx.beginPath(); mmx.arc(c.tile.q*sx+sx/2,c.tile.r*sy+sy/2,3.4,0,7); mmx.fill(); mmx.strokeStyle='#fff'; mmx.lineWidth=0.8; mmx.stroke(); }
+  for(const u of units){ if(u.civ===G.player){ mmx.fillStyle='#fff'; mmx.fillRect(u.tile.q*sx+2,u.tile.r*sy+2,2.6,2.6);} }
+}
 
-        <!-- Asset Generation Modal -->
-        <div id="asset-modal" class="modal hidden">
-            <div class="modal-content">
-                <button id="close-modal" class="close-btn">&times;</button>
-                <h2>GENERATE ASSET PROMPT</h2>
-                
-                <div class="asset-type-selector">
-                    <label>What do you want to generate?</label>
-                    <select id="asset-type">
-                        <option value="ruler-portrait">Ruler Portrait</option>
-                        <option value="map">Kingdom Map</option>
-                        <option value="item">Item/Artifact</option>
-                        <option value="reward">Reward/Trophy</option>
-                        <option value="event">Event Illustration</option>
-                        <option value="city">City/Castle</option>
-                        <option value="army">Army/Military Unit</option>
-                    </select>
-                </div>
+/* ---------------- ECONOMY ---------------- */
+function civCities(civ){return cities.filter(c=>c.civ===civ);}
+function civUnits(civ){return units.filter(u=>u.civ===civ);}
+function cityYields(c){
+  let y={food:1,prod:2,gold:1,sci:1,cul:1};
+  for(const t of tilesWithin(c.tile,2)){ if(t.owner===c.civ||hexDist(c.tile,t)<=1){ const ty=yieldsOf(t,c.civ); y.food+=ty.food*0.6; y.prod+=ty.prod*0.6; y.gold+=ty.gold*0.6; y.sci+=ty.sci*0.6; y.cul+=ty.cul*0.6; } }
+  y.food+=c.pop*0.7; y.sci+=c.pop*0.35; y.cul+=c.pop*0.25; y.gold+=c.pop*0.3;
+  if(c.buildings.has('granary')) y.food+=2;
+  if(c.buildings.has('library')) y.sci+=3;
+  if(c.buildings.has('market')) y.gold+=3;
+  if(c.buildings.has('harbor')) {y.gold+=2; y.food+=1;}
+  if(c.buildings.has('temple')) y.cul+=2;
+  if(c.buildings.has('barracks')) y.prod+=1;
+  for(const k in y) y[k]=Math.round(y[k]*10)/10;
+  return y;
+}
+function civYields(civ){
+  let y={food:0,prod:0,gold:0,sci:0,cul:0};
+  for(const c of civCities(civ)){ const cy=cityYields(c); for(const k in y) y[k]+=cy[k]; }
+  const _nu=civUnits(civ).length; y.gold-=_nu*0.7+Math.max(0,_nu-10)*1.1; /* upkeep scales with army size */
+  for(const k in y) y[k]=Math.round(y[k]*10)/10;
+  return y;
+}
+/* ---------------- SELECTION & ORDERS ---------------- */
+function computeReachable(u){
+  reachable=new Map(); attackable=new Set();
+  if(!u||u.moveLeft<=0) return;
+  const naval=UNITS[u.type].naval;
+  /* BFS movement */
+  const seen=new Map([[u.tile,0]]); const Q=[[u.tile,0]];
+  while(Q.length){ const [t,cost]=Q.shift();
+    for(const n of axialNeighbors(t)){
+      if(n.city&&n.city.civ!==u.civ) continue;
+      if(n.unit&&n.unit.civ!==u.civ) continue;
+      if(n.unit&&n.unit.civ===u.civ&&n!==u.tile) continue;
+      const c2=cost+moveCost(t,n,u.type,u.civ);
+      if(c2<=u.moveLeft&&(!seen.has(n)||c2<seen.get(n))){ seen.set(n,c2); Q.push([n,c2]); }
+    }
+  }
+  for(const [t,c] of seen) if(t!==u.tile) reachable.set(t,c);
+  /* attacks */
+  const range=UNITS[u.type].rng;
+  if(UNITS[u.type].str>0||UNITS[u.type].rstr){
+    for(const t of tiles){
+      const d=hexDist(u.tile,t); if(d===0) continue;
+      const melee=range===0&&d===1, ranged=range>0&&d<=range;
+      if(!melee&&!ranged) continue;
+      if(naval!==!!isWater(t)&&range===0) {}
+      if(t.unit&&t.unit.civ!==u.civ&&G.atWar[u.civ][t.unit.civ]) attackable.add(t);
+      if(t.unit&&t.unit.civ!==u.civ&&u.civ===G.player) attackable.add(t); /* player may strike to declare war */
+      if(t.city&&t.city.civ!==u.civ&&(G.atWar[u.civ][t.city.civ]||u.civ===G.player)) attackable.add(t);
+    }
+  }
+}
+function selectUnit(u){ selected={kind:'unit',unit:u,tile:u.tile}; computeReachable(u); renderSelPanel(); }
+function selectCity(c){ selected={kind:'city',city:c,tile:c.tile}; reachable=new Map(); attackable=new Set(); renderSelPanel(); }
+function selectTile(t){ selected={kind:'tile',tile:t}; reachable=new Map(); attackable=new Set(); renderSelPanel(); }
+function clearSel(){ selected=null; reachable=new Map(); attackable=new Set(); renderSelPanel(); }
 
-                <div id="asset-context" class="asset-context"></div>
+function moveUnitTo(u,t){
+  const cost=reachable.get(t); if(cost===undefined) return false;
+  u.tile.unit=null; u.tile=t; t.unit=u; u.moveLeft-=cost; u.fortified=false;
+  computeReachable(u); renderSelPanel(); updateEndTurnBtn(); return true;
+}
+function declareWar(a,b,silent){
+  if(a===b||G.atWar[a][b]) return;
+  G.atWar[a][b]=G.atWar[b][a]=true; G.relations[a][b]-=60; G.relations[b][a]-=60;
+  if(!silent) log(`WAR — ${PRINCES[a].name} of ${PRINCES[a].house} declares war on ${PRINCES[b].name} of ${PRINCES[b].house}!`,'war');
+}
+function makePeace(a,b){
+  G.atWar[a][b]=G.atWar[b][a]=false; G.relations[a][b]+=25; G.relations[b][a]+=25;
+  log(`Peace — ${PRINCES[a].name} and ${PRINCES[b].name} sheath their swords.`,'good');
+}
+function combatStrength(u,defTile,vsCity){
+  let s=UNITS[u.type].str;
+  if(u.civ===1) s*=1.15;
+  if(G.techs[u.civ].has('bronze')&&(u.type==='warrior'||u.type==='spearman'||u.type==='swordsman')) s*=1.10;
+  if(defTile&&(defTile.terrain==='hills'||defTile.feature==='forest')) s*=0.9; /* attacker penalty into cover */
+  return s;
+}
+function attack(u,targetTile){
+  const defU=targetTile.unit, defC=targetTile.city;
+  if(defU&&defU.civ!==u.civ&&!G.atWar[u.civ][defU.civ]&&u.civ===G.player){ if(!confirm(`Declare war on ${PRINCES[defU.civ].name} and attack?`)) return; declareWar(u.civ,defU.civ); }
+  if(defC&&defC.civ!==u.civ&&!G.atWar[u.civ][defC.civ]&&u.civ===G.player){ if(!confirm(`Declare war on ${PRINCES[defC.civ].name} and besiege ${defC.name}?`)) return; declareWar(u.civ,defC.civ); }
+  const ranged=UNITS[u.type].rng>0;
+  let atk=ranged?(UNITS[u.type].rstr||UNITS[u.type].str):combatStrength(u,targetTile,false);
+  if((u.type==='catapult'||u.type==='bombard')&&defC) atk*=2;
+  let def=0, defObj=null;
+  if(defU){ def=combatStrength(defU,defU.tile,false); if(defU.type==='spearman'&&u.type==='cavalry') def*=1.5; if(defU.fortified) def*=1.25; defObj=defU; }
+  else if(defC){ def=10+defC.pop*1.6+(defC.buildings.has('walls')?8:0); defObj=defC; }
+  if(!defObj) return;
+  const ratio=atk/Math.max(1,def);
+  const dmgToDef=Math.round(clamp(34*Math.pow(ratio,1.15)*(0.85+R()*0.3),4,92));
+  const dmgToAtk=ranged?0:Math.round(clamp(26/Math.pow(ratio,1.1)*(0.85+R()*0.3),2,70));
+  if(defU){ defU.hp-=dmgToDef; }
+  else { defC.hp-=dmgToDef; }
+  u.hp-=dmgToAtk; u.moveLeft=0;
+  if(u.civ===G.player||(defU&&defU.civ===G.player)||(defC&&defC.civ===G.player))
+    log(`${UNITS[u.type].name} (${PRINCES[u.civ].name}) strikes ${defU?UNITS[defU.type].name+' of '+PRINCES[defU.civ].name:defC.name} for ${dmgToDef}.`,'war');
+  if(defU&&defU.hp<=0){ killUnit(defU); if(!ranged&&!targetTile.city&&passable(targetTile,u.type)) { u.tile.unit=null; u.tile=targetTile; targetTile.unit=u; } }
+  if(defC&&defC.hp<=0) captureCity(defC,u.civ);
+  if(u.hp<=0) killUnit(u);
+  computeReachable(selected&&selected.kind==='unit'?selected.unit:null);
+  renderSelPanel(); updateUI();
+}
+function killUnit(u){ if(u.tile.unit===u) u.tile.unit=null; units=units.filter(x=>x!==u); if(selected&&selected.unit===u) clearSel(); }
+function captureCity(c,newCiv){
+  const old=c.civ; c.civ=newCiv; c.hp=Math.round(c.maxhp*0.5); c.pop=Math.max(1,c.pop-1); c.queue=[]; c.prodStock=0;
+  for(const t of tilesWithin(c.tile,2)) if(hexDist(c.tile,t)<=1) t.owner=newCiv;
+  claimTerritory(c);
+  log(`${c.name} has FALLEN to ${PRINCES[newCiv].name} of ${PRINCES[newCiv].house}!`,'major');
+  if(c.capital){
+    if(civCities(old).length===0){ G.alive[old]=false; for(const u of [...civUnits(old)]) killUnit(u); log(`Prince ${PRINCES[old].name} is eliminated. His crown sinks into the bay.`,'major'); }
+    checkVictory();
+  }
+  if(old===G.player) toast(`You lost ${c.name}!`);
+}
+function checkVictory(){
+  if(G.over) return;
+  const caps=cities.filter(c=>c.capital);
+  const mine=caps.filter(c=>c.civ===G.player).length;
+  if(mine===6){ endGame(true,'DOMINATION — every rival capital flies your banner. The Chesapeake is yours.'); }
+  else if(!G.alive[G.player]||civCities(G.player).length===0){ endGame(false,'Your last city has fallen. The chronicle closes on your house — for now.'); }
+}
+function endGame(won,msg){ G.over=true; log(msg,'major'); setTimeout(()=>alert((won?'VICTORY\n\n':'DEFEAT\n\n')+msg),80); }
 
-                <div class="prompt-display">
-                    <label>Copy this prompt to your AI image generator:</label>
-                    <textarea id="prompt-text" readonly></textarea>
-                    <button id="copy-prompt" class="btn btn-primary">📋 COPY PROMPT</button>
-                </div>
+/* ---------------- PRODUCTION & TURN ---------------- */
+function trainOptions(c){
+  const opts=[];
+  for(const [id,b] of Object.entries(BUILDINGS)){
+    if(c.buildings.has(id)) continue;
+    if(b.req&&!G.techs[c.civ].has(b.req)) continue;
+    if(b.coastal&&!axialNeighbors(c.tile).some(isWater)&&!isWater(c.tile)) continue;
+    opts.push({kind:'building',id,cost:b.cost,label:b.name,desc:b.desc});
+  }
+  for(const [id,u] of Object.entries(UNITS)){
+    if(u.req&&!G.techs[c.civ].has(u.req)) continue;
+    if(u.naval&&!axialNeighbors(c.tile).some(isWater)) continue;
+    opts.push({kind:'unit',id,cost:u.cost,label:u.name,desc:u.desc});
+  }
+  return opts;
+}
+function finishProduction(c){
+  const item=c.queue[0]; if(!item) return;
+  c.prodStock-=item.cost; c.queue.shift();
+  if(item.kind==='building'){ c.buildings.add(item.id); if(item.id==='walls'){c.maxhp+=150; c.hp+=150;} if(c.civ===G.player) log(`${c.name} completes ${item.label}.`,'good'); return; }
+  let t=c.tile;
+  if(t.unit||!passable(t,item.id)){ const alt=axialNeighbors(t).find(n=>passable(n,item.id)&&!n.unit&&!n.city); if(alt) t=alt; else { c.queue.unshift(item); c.prodStock=item.cost; return; } }
+  const u=spawnUnit(c.civ,item.id,t);
+  if(u&&c.buildings.has('barracks')&&UNITS[item.id].str>0){ u.hp=Math.min(115,u.hp+15); }
+  if(c.civ===G.player&&u) log(`${c.name} trains a ${item.label}.`,'');
+}
+function nextCityName(civ){
+  const idx=G.cityNameIdx[civ]++;
+  let name=CITY_NAMES[civ][idx];
+  if(!name){ const pre=['New ','Port ','Fort ','Lake ','Kings ']; const suf=['wick','haven','ford','mere','stead'];
+    name=pre[idx%pre.length]+PRINCES[civ].name+suf[Math.floor(idx/pre.length)%suf.length]; }
+  if(cities.some(c=>c.name===name)) name=name+' '+(cities.filter(c=>c.name.startsWith(name)).length+1);
+  return name;
+}
+function processCity(c){
+  const y=cityYields(c);
+  G.gold[c.civ]+=y.gold; G.culture[c.civ]+=y.cul;
+  c.foodStock+=y.food-c.pop*1.6;
+  if(c.foodStock>14+c.pop*7){ c.foodStock=0; c.pop++; if(c.civ===G.player) log(`${c.name} grows to population ${c.pop}.`,'good'); claimTerritory(c); }
+  if(c.foodStock<-6){ c.foodStock=0; if(c.pop>1){c.pop--; if(c.civ===G.player) log(`${c.name} starves — population falls.`,'war');} }
+  c.hp=Math.min(c.maxhp+(c.buildings.has('walls')?0:0), c.hp+14);
+  if(c.queue.length){
+    c.prodStock+=y.prod;
+    const item=c.queue[0];
+    if(c.prodStock>=item.cost) finishProduction(c);
+  } else if(c.civ!==G.player){ aiChooseProduction(c); }
+}
+function aiChooseProduction(c){
+  let opts=trainOptions(c); if(!opts.length) return;
+  const civ=c.civ, myCities=civCities(civ), myUnits=civUnits(civ);
+  const settlers=myUnits.filter(u=>u.type==='settler').length;
+  const builders=myUnits.filter(u=>u.type==='builder').length;
+  const military=myUnits.filter(u=>UNITS[u.type].str>0).length;
+  const armyCap=7+myCities.length*3;
+  const atWar=G.atWar[civ].some(Boolean);
+  const unimproved=tiles.some(t=>t.owner===civ&&!t.improve&&!t.city&&(t.feature==='forest'||t.terrain==='hills'||t.terrain==='plains'||t.terrain==='grass'));
+  let pick=null;
+  if(myCities.length<6&&settlers===0&&c.pop>=3) pick=opts.find(o=>o.id==='settler');
+  if(!pick&&builders<Math.min(3,myCities.length)&&unimproved&&R()<0.75) pick=opts.find(o=>o.id==='builder');
+  if(!pick&&(atWar||military<armyCap)) pick=opts.filter(o=>o.kind==='unit'&&UNITS[o.id].str>0).sort((a,b)=>b.cost-a.cost)[0];
+  if(!pick) pick=opts.filter(o=>o.kind==='building').sort(()=>R()-0.5)[0];
+  if(!pick&&military<armyCap) pick=opts.filter(o=>o.kind==='unit'&&UNITS[o.id].str>0).sort(()=>R()-0.5)[0];
+  if(pick) c.queue.push(pick);
+}
+function processResearch(civ){
+  const y=civYields(civ); G.sci[civ]+=y.sci;
+  let cur=G.researching[civ];
+  if(!cur||G.techs[civ].has(cur)){ const next=TECHS.find(t=>!G.techs[civ].has(t.id)&&t.req.every(r=>G.techs[civ].has(r))); cur=next?next.id:null; G.researching[civ]=cur; if(civ===G.player&&cur) renderTechBar(); }
+  if(!cur) return;
+  const t=techById(cur);
+  if(G.sci[civ]>=t.cost){ G.sci[civ]-=t.cost; G.techs[civ].add(cur); if(civ===G.player){ log(`Technology mastered: ${t.name}.`,'good'); toast(`Researched ${t.name}`);} G.researching[civ]=null; }
+}
+function endTurn(){
+  if(G.over) return;
+  clearSel();
+  for(const c of [...civCities(G.player)]) processCity(c);
+  processResearch(G.player);
+  /* upkeep insolvency guard */
+  if(G.gold[G.player]<0){ G.gold[G.player]=0; const us=civUnits(G.player); if(us.length>3&&R()<0.5){ const u=us[us.length-1]; log(`Treasury empty — a ${UNITS[u.type].name} disbands.`,'war'); killUnit(u);} }
+  for(let civ=0;civ<6;civ++){ if(civ===G.player||!G.alive[civ]) continue; aiTurn(civ); }
+  G.turn++;
+  for(const u of units) u.moveLeft=UNITS[u.type].move+(civBonusMove(u));
+  for(const u of units) if(u.hp<100&&u.fortified) u.hp=Math.min(100,u.hp+12);
+  if(G.turn===150){ scoreVictory(); }
+  if(G.turn%4===1) seasonTick();
+  updateUI();
+  autosave();
+  const idle=civUnits(G.player).filter(u=>u.moveLeft>0&&(UNITS[u.type].str>0||u.type==='settler'||u.type==='builder'));
+  toast(`Turn ${G.turn} — ${idle.length? idle.length+' unit(s) awaiting orders':'all orders given'}`);
+}
+function civBonusMove(u){ let m=0; if(u.civ===5) m+=1; if(G.techs[u.civ].has('wheel')&&isLand(u.tile)&&!UNITS[u.type].naval) m+= (u.tile.feature?0:1)*0; if(UNITS[u.type].naval&&G.techs[u.civ].has('astronomy')) m+=1; return m; }
+function seasonTick(){ const seasons=['Spring','Summer','Autumn','Winter']; const yr=Math.floor((G.turn-1)/4)+1; /* flavor chronicle */
+  if(R()<0.4){ const f=['A great blue-crab harvest fills the bay markets.','Storms lash the coast; the galleys stay in harbor.','A comet is seen over the bay. The court astrologers argue.','Traders from beyond the capes bring strange goods and stranger news.','The marshes bloom; fever and flowers in equal measure.'][Math.floor(R()*5)]; log(f,''); } }
+function scoreVictory(){
+  const scores=PRINCES.map((p,i)=>({i,s:Math.round(civCities(i).length*120+civUnits(i).length*22+G.techs[i].size*55+civCities(i).reduce((a,c)=>a+c.pop,0)*16+G.gold[i])})).sort((a,b)=>b.s-a.s);
+  const top=scores[0];
+  endGame(top.i===G.player, `Turn 150 — the chronicle is weighed. ${PRINCES[top.i].name} of ${PRINCES[top.i].house} leads with ${top.s} points. Your score: ${scores.find(s=>s.i===G.player).s}.`);
+}
+/* ---------------- AI ---------------- */
+function aiTurn(civ){
+  for(const c of [...civCities(civ)]) processCity(c);
+  processResearch(civ);
+  /* diplomacy drift */
+  for(let o=0;o<6;o++){ if(o===civ||!G.alive[o]) continue;
+    G.relations[civ][o]+=Math.floor(R()*7)-3;
+    if(!G.atWar[civ][o]&&G.relations[civ][o]<-35&&civUnits(civ).length>civUnits(o).length*1.25&&R()<0.5){ declareWar(civ,o); }
+    if(G.atWar[civ][o]&&G.relations[civ][o]>30&&R()<0.4){ makePeace(civ,o); }
+  }
+  if(G.gold[civ]<0) G.gold[civ]=0;
+  for(const u of [...civUnits(civ)]) aiUnit(u);
+  if(!civCities(civ).length&&G.alive[civ]){ G.alive[civ]=false; }
+}
+function aiUnit(u){
+  if(!units.includes(u)) return;
+  const D=UNITS[u.type];
+  if(u.type==='settler'){
+    let best=null,bs=-1; const region=landRegion(u.tile);
+    for(const t of region){ if(t.city) continue; if(cities.some(c=>hexDist(c.tile,t)<4)) continue;
+      const y=yieldsOf(t,u.civ); const s=y.food+y.prod+y.gold - hexDist(u.tile,t)*0.3; if(s>bs){bs=s;best=t;} }
+    if(!best){ const home=civCities(u.civ).sort((a,b)=>hexDist(u.tile,a.tile)-hexDist(u.tile,b.tile))[0]; if(home&&u.tile!==home.tile) stepToward(u,home.tile); return; }
+    if(u.tile!==best) stepToward(u,best);
+    if(units.includes(u)&&u.tile===best) settle(u);
+    return;
+  }
+  if(u.type==='builder'){
+    const home=civCities(u.civ).sort((a,b)=>hexDist(u.tile,a.tile)-hexDist(u.tile,b.tile))[0];
+    const workTiles=tiles.filter(t=>t.owner===u.civ&&!t.improve&&!t.city&&(t.feature==='forest'||t.terrain==='hills'||t.terrain==='plains'||t.terrain==='grass'));
+    const tgt=workTiles.sort((a,b)=>hexDist(u.tile,a)-hexDist(u.tile,b))[0];
+    if(tgt){ if(u.tile===tgt) improveHere(u); else stepToward(u,tgt); if(u.tile===tgt) improveHere(u); }
+    return;
+  }
+  /* military */
+  const enemies=units.filter(e=>e.civ!==u.civ&&G.atWar[u.civ][e.civ]);
+  const enemyCities=cities.filter(c=>c.civ!==u.civ&&G.atWar[u.civ][c.civ]);
+  let target=null;
+  const nearE=enemies.sort((a,b)=>hexDist(u.tile,a.tile)-hexDist(u.tile,b.tile))[0];
+  if(nearE&&hexDist(u.tile,nearE.tile)<= (D.rng>0?D.rng:1)){ selected=null; attack(u,nearE.tile); return; }
+  if(enemyCities.length) target=enemyCities.sort((a,b)=>hexDist(u.tile,a.tile)-hexDist(u.tile,b.tile))[0].tile;
+  else if(nearE) target=nearE.tile;
+  else { const allC=cities.filter(c=>c.civ!==u.civ); target=allC.length?allC.sort((a,b)=>hexDist(u.tile,a.tile)-hexDist(u.tile,b.tile))[0].tile:null; /* drift toward rivals, guard home */
+    const home=civCities(u.civ)[0]; if(home&&hexDist(u.tile,home.tile)>7) target=home.tile; }
+  if(target){ stepToward(u,target);
+    const e2=units.find(e=>e.tile&&G.atWar[u.civ][e.civ]&&e.civ!==u.civ&&hexDist(u.tile,e.tile)<=(D.rng>0?D.rng:1));
+    if(e2&&units.includes(u)&&u.moveLeft>=0) attack(u,e2.tile);
+    else { const ec=cities.find(c=>c.civ!==u.civ&&G.atWar[u.civ][c.civ]&&hexDist(u.tile,c.tile)<=(D.rng>0?D.rng:1)); if(ec&&units.includes(u)) attack(u,ec.tile); }
+  }
+}
+function landRegion(start){
+  const seen=new Set([start]); const Q=[start];
+  while(Q.length){ const t=Q.shift(); for(const n of axialNeighbors(t)){ if(seen.has(n)) continue; if(!isLand(n)||n.terrain==='mountain') continue; seen.add(n); Q.push(n); } }
+  return seen;
+}
+function stepToward(u,dest){
+  let guard=0;
+  while(u.moveLeft>0&&guard++<8){
+    if(u.tile===dest) break;
+    computeReachableFor(u);
+    let best=null,bc=1e9,bd=hexDist(u.tile,dest);
+    for(const [t,c] of reachable){ const d=hexDist(t,dest); if(d<bd||(d===bd&&c<bc)){ if(d<bd||best===null){best=t;bc=c;bd=d;} } }
+    if(!best) break;
+    u.tile.unit=null; const from=u.tile; u.tile=best; best.unit=u; u.moveLeft-=bc;
+    if(u.tile===dest) break;
+  }
+  reachable=new Map(); attackable=new Set();
+}
+function computeReachableFor(u){ const keep=selected; computeReachable(u); }
+function settle(u){
+  const t=u.tile; if(!t||t.city) return;
+  if(cities.some(c=>hexDist(c.tile,t)<3)) return;
+  const civ=u.civ; const name=nextCityName(civ);
+  killUnit(u); foundCity(civ,t,name,false);
+  if(civ!==G.player) log(`${PRINCES[civ].name} founds ${name}.`,'');
+}
+function improveHere(u){
+  const t=u.tile; if(t.improve||t.city) return;
+  if(t.feature==='forest'&&G.techs[u.civ].has('mining')||t.feature==='forest'){ t.improve='lumber'; }
+  else if(t.terrain==='hills'){ if(!G.techs[u.civ].has('mining')) return; t.improve='mine'; }
+  else t.improve='farm';
+  u.charges--; u.moveLeft=0; if(u.charges<=0) killUnit(u);
+}
 
-                <div class="asset-upload">
-                    <label>Upload generated image:</label>
-                    <input type="file" id="asset-file" accept="image/*">
-                    <button id="upload-asset" class="btn btn-success">✅ USE IMAGE</button>
-                </div>
-
-                <div id="preview-area" class="preview-area"></div>
-            </div>
-        </div>
-    </div>
-
-    <script src="game.js"></script>
+/* ---------------- UI ---------------- */
+const $=id=>document.getElementById(id);
+function updateUI(){
+  if(!G) return;
+  const p=G.player, y=civYields(p);
+  $('yields').innerHTML=
+   `<span><span class="y-ico" style="color:#e5c95e">●</span>Gold <b>${Math.floor(G.gold[p])}</b> (${y.gold>=0?'+':''}${y.gold})</span>`+
+   `<span><span class="y-ico" style="color:#7db3e8">⬢</span>Science <b>${y.sci}</b></span>`+
+   `<span><span class="y-ico" style="color:#c99ae0">♪</span>Culture <b>${Math.floor(G.culture[p])}</b> (+${y.cul})</span>`+
+   `<span><span class="y-ico" style="color:#a9d6a9">❦</span>Food <b>+${y.food}</b></span>`+
+   `<span><span class="y-ico" style="color:#e0a35e">⚒</span>Prod <b>+${y.prod}</b></span>`+
+   `<span><span class="y-ico" style="color:#e79a9a">⚔</span>Army <b>${civUnits(p).length}</b></span>`+
+   `<span><span class="y-ico" style="color:#fff">⌂</span>Cities <b>${civCities(p).length}</b></span>`;
+  const seasons=['Spring','Summer','Autumn','Winter'];
+  $('turnlbl').textContent='Turn '+G.turn;
+  $('seasonlbl').textContent=seasons[(G.turn-1)%4]+' · Year '+(Math.floor((G.turn-1)/4)+1);
+  $('princes').innerHTML=PRINCES.map((pr,i)=>{
+    const rel=i===p?'—':(G.atWar[p][i]?'⚔ WAR':(G.relations[p][i]>55?'☺':G.relations[p][i]>15?'😐':'☠'));
+    return `<div class="prince ${G.alive[i]?'':'dead'}" data-civ="${i}"><span class="dot" style="background:${pr.color}"></span>
+      <span><span class="pn">${pr.name}${i===p?' (You)':''}</span><br><span class="pc">${pr.house} · ${civCities(i).length} cities</span></span>
+      <span class="rel">${rel}</span></div>`;}).join('');
+  document.querySelectorAll('.prince').forEach(el=>el.onclick=()=>{ const i=+el.dataset.civ; if(i!==p&&G.alive[i]) openDiplomacy(i); });
+  renderTechBar(); renderChron(); updateEndTurnBtn();
+}
+function renderTechBar(){
+  const cur=G.researching[G.player];
+  if(!cur){ $('techname').textContent='Choose research'; $('techfill').style.width='0%'; $('techprog').textContent='Click to open Technology'; return; }
+  const t=techById(cur); $('techname').textContent=t.name;
+  $('techfill').style.width=clamp(G.sci[G.player]/t.cost*100,0,100)+'%';
+  $('techprog').textContent=`${Math.floor(G.sci[G.player])} / ${t.cost} science · +${civYields(G.player).sci}/turn`;
+}
+function updateEndTurnBtn(){
+  const idle=civUnits(G.player).filter(u=>u.moveLeft>0);
+  $('endturn').classList.toggle('notify',idle.length===0);
+  $('endturnsub').textContent=idle.length? idle.length+' unit(s) still have moves':'all orders given — end turn';
+}
+function renderSelPanel(){
+  const el=$('selpanel');
+  if(!selected){ el.style.display='none'; return; }
+  el.style.display='block';
+  const t=selected.tile;
+  let terrainInfo=`<div class="sub">${TERRAIN_NAME[t.terrain]}${t.feature?' · Forest':''}${t.resource?' · '+RES_NAME[t.resource]:''}${t.improve?' · '+(t.improve==='farm'?'Farm':t.improve==='mine'?'Mine':'Lumber Camp'):''}${t.owner>=0?' · '+PRINCES[t.owner].house:''}</div>`;
+  if(selected.kind==='unit'){
+    const u=selected.unit, D=UNITS[u.type];
+    el.innerHTML=`<h2 style="color:${PRINCES[u.civ].color}">${D.name}</h2>${terrainInfo}
+      <div class="sub">${PRINCES[u.civ].name} · ${PRINCES[u.civ].house}${u.civ!==G.player?' (rival)':''}</div>
+      <div class="hpbar"><div style="width:${u.hp}%"></div></div>
+      <div class="stats"><span>Health <b>${Math.max(0,Math.round(u.hp))}</b></span><span>Moves <b>${u.moveLeft} / ${D.move}</b></span>
+      <span>Strength <b>${D.str||'—'}</b></span><span>Range <b>${D.rng||'Melee'}</b></span>${u.charges?`<span>Build charges <b>${u.charges}</b></span>`:''}</div>
+      <div class="sub" style="margin-top:5px">${D.desc}</div>`+
+      (u.civ===G.player? unitActions(u):'<div class="sub" style="margin-top:8px">A rival unit. Declare war from the princes panel to engage freely — or strike it directly.</div>');
+  } else if(selected.kind==='city'){
+    const c=selected.city, y=cityYields(c);
+    el.innerHTML=`<h2 style="color:${PRINCES[c.civ].color}">${c.name} ${c.capital?'♛':''}</h2>${terrainInfo}
+      <div class="sub">${PRINCES[c.civ].house} · Population ${c.pop}</div>
+      <div class="hpbar"><div style="width:${c.hp/c.maxhp*100}%"></div></div>
+      <div class="stats"><span>City HP <b>${Math.round(c.hp)} / ${c.maxhp}</b></span><span>Food <b>+${y.food}</b></span>
+      <span>Production <b>+${y.prod}</b></span><span>Gold <b>+${y.gold}</b></span><span>Science <b>+${y.sci}</b></span><span>Culture <b>+${y.cul}</b></span></div>
+      <div class="sub" style="margin-top:5px">Buildings: ${[...c.buildings].map(b=>BUILDINGS[b].name).join(', ')||'none yet'}</div>`+
+      (c.civ===G.player? cityActions(c):'<div class="sub" style="margin-top:8px">A rival city.</div>');
+  } else {
+    const y=yieldsOf(t,G.player);
+    el.innerHTML=`<h2>${TERRAIN_NAME[t.terrain]}</h2>${terrainInfo}
+      <div class="stats"><span>Food <b>${y.food}</b></span><span>Production <b>${y.prod}</b></span><span>Gold <b>${y.gold}</b></span><span>Science <b>${y.sci}</b></span></div>
+      <div class="sub" style="margin-top:6px">${tileFlavor(t)}</div>`;
+  }
+  bindPanelButtons();
+}
+function tileFlavor(t){
+  switch(t.terrain){
+    case 'bay': return 'The Chesapeake. Blue crabs below, galleys above, six crowns watching.';
+    case 'deepwater': return 'Open water. Only hulls and nerve cross here.';
+    case 'marsh': return 'Salt marsh — reed, mud, and channels only House Corvin truly knows.';
+    case 'mountain': return 'Impassable heights. Even princes go around.';
+    case 'hills': return 'High ground. Archers love it; attackers curse it.';
+    default: return t.feature==='forest'?'Deep timber. Cover, lumber, and things with antlers.':'Open country, waiting for a plow or a banner.';
+  }
+}
+function unitActions(u){
+  let h='<h3>ORDERS</h3>';
+  if(u.type==='settler') h+=`<button class="abtn" data-act="settle" ${cities.some(c=>hexDist(c.tile,u.tile)<3)?'disabled':''}>Found City Here<small>Needs 3 tiles of breathing room from other cities</small></button>`;
+  if(u.type==='builder') h+=`<button class="abtn" data-act="improve" ${u.tile.improve||u.tile.city||u.charges<=0?'disabled':''}>Build Improvement<small>${u.tile.feature==='forest'?'Lumber Camp':u.tile.terrain==='hills'?'Mine (needs Mining for full yield)':'Farm'} · ${u.charges} charges left</small></button>`;
+  if(UNITS[u.type].str>0) h+=`<button class="abtn" data-act="fortify">${u.fortified?'Fortified ✓':'Fortify'}<small>+25% defense until moved</small></button>`;
+  h+=`<button class="abtn" data-act="wait">Wait<small>Spend this unit’s turn</small></button>`;
+  h+=`<button class="abtn" data-act="nextunit">Next Unit With Moves<small>Cycle your forces</small></button>`;
+  return h;
+}
+function cityActions(c){
+  let h='<h3>PRODUCTION QUEUE</h3>';
+  if(!c.queue.length) h+='<div class="sub">Nothing queued — choose below.</div>';
+  c.queue.forEach((q,i)=>{ h+=`<div class="sub">${i+1}. ${q.label} <span style="color:var(--gold2)">${Math.min(c.prodStock,q.cost)}/${q.cost}</span></div>`; });
+  if(c.queue.length){ const rc=Math.ceil((c.queue[0].cost-Math.min(c.prodStock,c.queue[0].cost))*2); h+=`<button class="abtn" data-act="rush" ${G.gold[c.civ]<rc?'disabled':''}>Rush ${c.queue[0].label} — ${rc} Gold<span class="cost">⚡</span><small>Finish it today, at a princely price</small></button>`; }
+  h+='<h3>TRAIN / BUILD</h3>';
+  for(const o of trainOptions(c)) h+=`<button class="abtn" data-act="train" data-id="${o.id}" data-kind="${o.kind}">${o.label}<span class="cost">${o.cost} ⚒</span><small>${o.desc}</small></button>`;
+  return h;
+}
+function bindPanelButtons(){
+  document.querySelectorAll('#selpanel [data-act]').forEach(b=>b.onclick=()=>{
+    const act=b.dataset.act;
+    if(act==='settle'&&selected.unit){ const u=selected.unit; const name=nextCityName(u.civ); const t=u.tile; killUnit(u); const c=foundCity(u.civ,t,name,false); log(`${name} is founded. A new light on the bay.`,'good'); selectCity(c); updateUI(); }
+    if(act==='improve'&&selected.unit){ improveHere(selected.unit); renderSelPanel(); }
+    if(act==='fortify'&&selected.unit){ selected.unit.fortified=!selected.unit.fortified; if(selected.unit.fortified) selected.unit.moveLeft=0; renderSelPanel(); updateEndTurnBtn(); }
+    if(act==='wait'&&selected.unit){ selected.unit.moveLeft=0; renderSelPanel(); updateEndTurnBtn(); }
+    if(act==='nextunit'){ cycleUnit(); }
+    if(act==='rush'&&selected.city){ const c=selected.city; const q=c.queue[0]; if(q){ const rc=Math.ceil((q.cost-Math.min(c.prodStock,q.cost))*2); if(G.gold[c.civ]>=rc){ G.gold[c.civ]-=rc; c.prodStock=q.cost; finishProduction(c); log(`${c.name} rushes ${q.label} to completion.`,'good'); renderSelPanel(); updateUI(); } } }
+    if(act==='train'&&selected.city){ const c=selected.city; const all=trainOptions(c); const o=all.find(x=>x.id===b.dataset.id&&x.kind===b.dataset.kind); if(o){ c.queue.push(o); log(`${c.name} begins ${o.label}.`,''); renderSelPanel(); } }
+  });
+}
+/* ---------------- DIPLOMACY ---------------- */
+let dipCiv=-1;
+function openDiplomacy(i){
+  dipCiv=i; const pr=PRINCES[i], p=G.player;
+  $('dipname').innerHTML=`<span style="color:${pr.color}">Prince ${pr.name}</span> — ${pr.house}`;
+  $('dipsub').textContent=`${pr.title}. ${pr.trait} Relation: ${G.relations[p][i]} · ${G.atWar[p][i]?'AT WAR':'At peace'} · Cities: ${civCities(i).length} · Army: ${civUnits(i).length}`;
+  let h='';
+  if(G.atWar[p][i]) h+=`<button class="abtn" data-dip="peace">Sue for Peace<small>They ${G.relations[p][i]>-10||civUnits(i).length<civUnits(p).length?'may accept':'will likely refuse while they smell weakness'}</small></button>`;
+  else h+=`<button class="abtn" data-dip="war">Declare War<small>The chronicle will remember who started it</small></button>`;
+  h+=`<button class="abtn" data-dip="gift" ${G.gold[p]<40?'disabled':''}>Send Gift — 40 Gold<small>+18 relations. Gold speaks every language.</small></button>`;
+  h+=`<button class="abtn" data-dip="denounce">Denounce<small>−15 relations, but your other rivals approve (+6 each)</small></button>`;
+  h+=`<button class="abtn" data-dip="feast" ${G.gold[p]<25?'disabled':''}>Host a Feast — 25 Gold<small>+10 relations, +10 Culture</small></button>`;
+  $('dipbody').innerHTML=h;
+  document.querySelectorAll('[data-dip]').forEach(b=>b.onclick=()=>{
+    const a=b.dataset.dip;
+    if(a==='war'){ declareWar(p,i); toast(`War declared on Prince ${pr.name}`); }
+    if(a==='peace'){ if(G.relations[p][i]>-10||civUnits(i).length<civUnits(p).length||R()<0.3){ makePeace(p,i); } else { G.relations[p][i]-=5; toast(`${pr.name} refuses your peace.`); } }
+    if(a==='gift'){ G.gold[p]-=40; G.relations[p][i]+=18; G.relations[i][p]+=18; log(`You send a gift of gold to Prince ${pr.name}.`,''); }
+    if(a==='denounce'){ G.relations[p][i]-=15; for(let o=0;o<6;o++) if(o!==p&&o!==i) G.relations[p][o]+=6; log(`You denounce Prince ${pr.name} before the court.`,''); }
+    if(a==='feast'){ G.gold[p]-=25; G.relations[p][i]+=10; G.culture[p]+=10; log(`Prince ${pr.name}'s envoys feast at your table.`,'good'); }
+    openDiplomacy(i); updateUI();
+  });
+  $('dipmodal').classList.add('open');
+}
+/* ---------------- TECH MODAL ---------------- */
+function openTech(){
+  $('techgrid').innerHTML=TECHS.map(t=>{
+    const has=G.techs[G.player].has(t.id); const reqOk=t.req.every(r=>G.techs[G.player].has(r)); const cur=G.researching[G.player]===t.id;
+    return `<div class="tech ${has?'done':reqOk?'avail':'locked'}" data-tech="${t.id}"><b>${t.name}${has?' ✓':cur?' ◐':''}</b><small>${t.cost} science${t.req.length?' · needs '+t.req.map(r=>techById(r).name).join(', '):''}</small><br>${t.desc}</div>`;
+  }).join('');
+  document.querySelectorAll('[data-tech]').forEach(el=>el.onclick=()=>{ const t=techById(el.dataset.tech);
+    if(!G.techs[G.player].has(t.id)&&t.req.every(r=>G.techs[G.player].has(r))){ G.researching[G.player]=t.id; renderTechBar(); openTech(); } });
+  $('techmodal').classList.add('open');
+}
+/* ---------------- INPUT ---------------- */
+let drag=null;
+cv.addEventListener('mousedown',e=>{ drag={x:e.clientX,y:e.clientY,moved:false}; });
+addEventListener('mousemove',e=>{ if(drag){ const dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.abs(e.clientX-drag.x0||0)>0){} if(Math.hypot(e.movementX,e.movementY)>0){} if(Math.abs(dx)+Math.abs(dy)>4) drag.moved=true; if(drag.moved){ cam.x+=e.movementX; cam.y+=e.movementY; } } });
+addEventListener('mouseup',e=>{ if(drag&&!drag.moved) clickMap(e); drag=null; });
+cv.addEventListener('wheel',e=>{ e.preventDefault(); const f=e.deltaY<0?1.12:0.89; const nz=clamp(cam.zoom*f,0.45,2.6); cam.x=e.clientX-(e.clientX-cam.x)*(nz/cam.zoom); cam.y=e.clientY-(e.clientY-cam.y)*(nz/cam.zoom); cam.zoom=nz; },{passive:false});
+cv.addEventListener('touchstart',e=>{ if(e.touches.length===1) drag={x:e.touches[0].clientX,y:e.touches[0].clientY,moved:false,lx:e.touches[0].clientX,ly:e.touches[0].clientY}; },{passive:true});
+cv.addEventListener('touchmove',e=>{ if(drag&&e.touches.length===1){ const t=e.touches[0]; cam.x+=t.clientX-drag.lx; cam.y+=t.clientY-drag.ly; drag.lx=t.clientX; drag.ly=t.clientY; drag.moved=true; } },{passive:true});
+cv.addEventListener('touchend',e=>{ if(drag&&!drag.moved&&e.changedTouches.length){ const t=e.changedTouches[0]; clickMap({clientX:t.clientX,clientY:t.clientY}); } drag=null; });
+function clickMap(e){
+  if(!G||$('start').style.display!=='none') return;
+  const t=screenToTile(e.clientX,e.clientY); if(!t) return;
+  if(selected&&selected.kind==='unit'&&selected.unit.civ===G.player){
+    const u=selected.unit;
+    if(attackable.has(t)){ attack(u,t); updateUI(); return; }
+    if(reachable.has(t)&&!t.unit&&!t.city){ moveUnitTo(u,t); return; }
+  }
+  if(t.unit) selectUnit(t.unit);
+  else if(t.city) selectCity(t.city);
+  else selectTile(t);
+}
+function cycleUnit(){
+  const us=civUnits(G.player).filter(u=>u.moveLeft>0);
+  if(!us.length){ toast('No units with moves left'); return; }
+  let idx=0; if(selected&&selected.unit) idx=(us.indexOf(selected.unit)+1)%us.length;
+  const u=us[idx]; selectUnit(u); const [x,y]=hexXY(u.tile.q,u.tile.r); cam.x=innerWidth/2-x*cam.zoom; cam.y=innerHeight/2-y*cam.zoom;
+}
+addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ endTurn(); }
+  if(e.key==='Tab'){ e.preventDefault(); cycleUnit(); }
+  if(e.key==='Escape'){ clearSel(); document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open')); }
+  const sp=26;
+  if(e.key==='ArrowLeft'||e.key==='a') cam.x+=sp; if(e.key==='ArrowRight'||e.key==='d') cam.x-=sp;
+  if(e.key==='ArrowUp'||e.key==='w') cam.y+=sp; if(e.key==='ArrowDown'||e.key==='s') cam.y-=sp;
+});
+$('endturn').onclick=endTurn;
+$('btn-tech').onclick=openTech; $('techbar').onclick=openTech;
+$('btn-chron').onclick=()=>{ const c=$('chron'); c.style.display=c.style.display==='none'?'block':'none'; };
+$('btn-menu').onclick=()=>{ if(confirm('Abandon this game and return to prince selection?')){ $('start').style.display='flex'; } };
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
+/* ---------------- SAVE / LOAD ---------------- */
+function serialize(){
+  return JSON.stringify({turn:G.turn,player:G.player,gold:G.gold,sci:G.sci,culture:G.culture,
+    techs:G.techs.map(s=>[...s]),researching:G.researching,atWar:G.atWar,relations:G.relations,alive:G.alive,
+    cityNameIdx:G.cityNameIdx,chron:G.chron.slice(0,40),
+    tiles:tiles.map(t=>({terrain:t.terrain,feature:t.feature,resource:t.resource,improve:t.improve,owner:t.owner})),
+    cities:cities.map(c=>({civ:c.civ,q:c.tile.q,r:c.tile.r,name:c.name,pop:c.pop,hp:c.hp,maxhp:c.maxhp,buildings:[...c.buildings],capital:c.capital,queue:c.queue,prodStock:c.prodStock,foodStock:c.foodStock})),
+    units:units.map(u=>({civ:u.civ,type:u.type,q:u.tile.q,r:u.tile.r,hp:u.hp,charges:u.charges}))});
+}
+function autosave(){ try{ localStorage.setItem('sixprinces-autosave',serialize()); }catch(e){} }
+$('btn-save').onclick=()=>{ try{ localStorage.setItem('sixprinces-save',serialize()); toast('Game saved'); }catch(e){ toast('Save failed — storage unavailable'); } };
+$('btn-load').onclick=()=>{ const s=localStorage.getItem('sixprinces-save')||localStorage.getItem('sixprinces-autosave'); if(!s){ toast('No saved game found'); return; } loadFrom(s); toast('Game loaded'); };
+function loadFrom(s){
+  const d=JSON.parse(s); genMap();
+  d.tiles.forEach((td,i)=>{ Object.assign(tiles[i],td); });
+  cities=[]; units=[]; nextId=1;
+  G={turn:d.turn,player:d.player,gold:d.gold,sci:d.sci,culture:d.culture,techs:d.techs.map(a=>new Set(a)),researching:d.researching,
+     atWar:d.atWar,relations:d.relations,alive:d.alive,chron:d.chron||[],over:false,winner:-1,cityNameIdx:d.cityNameIdx,difficulty:'Prince'};
+  for(const cd of d.cities){ const t=tileAt(cd.q,cd.r); const c={id:nextId++,civ:cd.civ,tile:t,name:cd.name,pop:cd.pop,hp:cd.hp,maxhp:cd.maxhp,buildings:new Set(cd.buildings),queue:cd.queue,prodStock:cd.prodStock,foodStock:cd.foodStock,capital:cd.capital}; t.city=c; cities.push(c); }
+  for(const ud of d.units){ spawnUnit(ud.civ,ud.type,tileAt(ud.q,ud.r)); const u=units[units.length-1]; if(u){u.hp=ud.hp; u.charges=ud.charges||0;} }
+  $('start').style.display='none'; clearSel(); centerOn(cities.find(c=>c.civ===G.player)||cities[0]); updateUI();
+}
+/* ---------------- START ---------------- */
+$('pick').innerHTML=PRINCES.map((p,i)=>`<div class="pcard" data-pick="${i}" style="border-top-color:${p.color}">
+  <div class="crown" style="color:${p.color}">♛</div><b>${p.name}</b><div class="house">${p.house}</div>
+  <div class="trait">${p.trait}</div><div class="bonus">${p.bonus}</div></div>`).join('');
+document.querySelectorAll('[data-pick]').forEach(el=>el.onclick=()=>{ newGame(+el.dataset.pick); $('start').style.display='none'; });
+draw();
+</script>
 </body>
 </html>
